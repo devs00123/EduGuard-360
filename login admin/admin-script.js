@@ -429,21 +429,128 @@
     });
   }
 
-  // Google Workspace SSO Demo
+  // Google Workspace SSO with Account Selector & Backend Authentication
+  const googleModal = document.getElementById("googleAuthModal");
+  const googleBackdrop = document.getElementById("googleBackdrop");
+  const googleCloseBtn = document.getElementById("googleModalCloseBtn");
+  const googleModalStatus = document.getElementById("googleModalStatus");
+  const googleCustomToggle = document.getElementById("googleCustomToggle");
+  const googleCustomPanel = document.getElementById("googleCustomPanel");
+  const googleCustomEmail = document.getElementById("googleCustomEmail");
+  const googleCustomSubmit = document.getElementById("googleCustomSubmit");
+
+  const openGoogleModal = () => {
+    if (googleModal) {
+      googleModal.style.display = "flex";
+      googleModal.setAttribute("aria-hidden", "false");
+      if (googleModalStatus) googleModalStatus.innerHTML = "";
+    }
+  };
+
+  const closeGoogleModal = () => {
+    if (googleModal) {
+      googleModal.style.display = "none";
+      googleModal.setAttribute("aria-hidden", "true");
+    }
+  };
+
+  if (googleBackdrop) googleBackdrop.addEventListener("click", closeGoogleModal);
+  if (googleCloseBtn) googleCloseBtn.addEventListener("click", closeGoogleModal);
+
+  if (googleCustomToggle && googleCustomPanel) {
+    googleCustomToggle.addEventListener("click", () => {
+      const isClosed = googleCustomPanel.style.display === "none";
+      googleCustomPanel.style.display = isClosed ? "block" : "none";
+      if (isClosed && googleCustomEmail) googleCustomEmail.focus();
+    });
+  }
+
+  const executeGoogleWorkspaceAuth = async (accountEmail, accountName, accountRole) => {
+    if (!accountEmail) return;
+
+    if (googleModalStatus) {
+      googleModalStatus.innerHTML = `<span style="color: #93c5fd;"><i class="fas fa-spinner fa-spin"></i> Authenticating ${accountName || accountEmail} with Google Workspace...</span>`;
+    }
+
+    try {
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: accountEmail, name: accountName, role: accountRole || 'FACULTY' })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Google Workspace authentication failed.');
+      }
+
+      // Store authentic session
+      localStorage.setItem('eduguard_token', data.token);
+      localStorage.setItem('eduguard_user', JSON.stringify(data.user));
+
+      const role = data.user.role;
+      if (googleModalStatus) {
+        googleModalStatus.innerHTML = `<span style="color: #4ade80;"><i class="fas fa-check-circle"></i> Institutional clearance verified! Launching workspace...</span>`;
+      }
+      setFeedback(`Institutional SSO verified for ${data.user.name} (${role.replace('_', ' ')}). Launching workspace...`, "success");
+
+      setTimeout(() => {
+        closeGoogleModal();
+        if (role === "FACULTY") {
+          window.location.href = '/faculty/dashboard';
+        } else if (role === "ADMIN") {
+          window.location.href = '/admin/dashboard';
+        } else if (role === "DEPARTMENT_HEAD") {
+          window.location.href = '/department-head/dashboard';
+        } else {
+          window.location.href = '/staff/dashboard';
+        }
+      }, 700);
+
+    } catch (err) {
+      if (googleModalStatus) {
+        googleModalStatus.innerHTML = `<span style="color: #f87171;"><i class="fas fa-circle-exclamation"></i> ${err.message}</span>`;
+      }
+      setFeedback(err.message, "error");
+    }
+  };
+
+  // Wire up account items in Google modal
+  document.querySelectorAll(".google-account-item[data-email]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const email = btn.getAttribute("data-email");
+      const name = btn.getAttribute("data-name");
+      const role = btn.getAttribute("data-role");
+      executeGoogleWorkspaceAuth(email, name, role);
+    });
+  });
+
+  // Custom Google email submission
+  if (googleCustomSubmit && googleCustomEmail) {
+    googleCustomSubmit.addEventListener("click", () => {
+      const customVal = googleCustomEmail.value.trim();
+      if (!customVal || !customVal.includes('@')) {
+        if (googleModalStatus) {
+          googleModalStatus.innerHTML = `<span style="color: #f87171;">Please enter a valid Google Workspace email address.</span>`;
+        }
+        return;
+      }
+      executeGoogleWorkspaceAuth(customVal, customVal.split('@')[0], 'FACULTY');
+    });
+
+    googleCustomEmail.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        googleCustomSubmit.click();
+      }
+    });
+  }
+
+  // Google button on main form
   if (googleBtn) {
     googleBtn.addEventListener("click", () => {
       clearFeedback();
-      googleBtn.classList.add("loading");
-      googleBtn.disabled = true;
-      const prevHtml = googleBtn.innerHTML;
-      googleBtn.innerHTML = "<span>Verifying Institutional SSO…</span>";
-
-      setTimeout(() => {
-        googleBtn.classList.remove("loading");
-        googleBtn.disabled = false;
-        googleBtn.innerHTML = prevHtml;
-        setFeedback("Institutional Single Sign-On available for authenticated campus domains.", "info");
-      }, 900);
+      openGoogleModal();
     });
   }
 

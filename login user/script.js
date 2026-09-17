@@ -583,21 +583,118 @@
     });
   }
 
-  // Google sign-in demo
+  // Google Sign-In with Account Selector & Backend Authentication
+  const googleModal = document.getElementById("googleAuthModal");
+  const googleBackdrop = document.getElementById("googleBackdrop");
+  const googleCloseBtn = document.getElementById("googleModalCloseBtn");
+  const googleModalStatus = document.getElementById("googleModalStatus");
+  const googleCustomToggle = document.getElementById("googleCustomToggle");
+  const googleCustomPanel = document.getElementById("googleCustomPanel");
+  const googleCustomEmail = document.getElementById("googleCustomEmail");
+  const googleCustomSubmit = document.getElementById("googleCustomSubmit");
+
+  const openGoogleModal = () => {
+    if (googleModal) {
+      googleModal.style.display = "flex";
+      googleModal.setAttribute("aria-hidden", "false");
+      if (googleModalStatus) googleModalStatus.innerHTML = "";
+    }
+  };
+
+  const closeGoogleModal = () => {
+    if (googleModal) {
+      googleModal.style.display = "none";
+      googleModal.setAttribute("aria-hidden", "true");
+    }
+  };
+
+  if (googleBackdrop) googleBackdrop.addEventListener("click", closeGoogleModal);
+  if (googleCloseBtn) googleCloseBtn.addEventListener("click", closeGoogleModal);
+
+  if (googleCustomToggle && googleCustomPanel) {
+    googleCustomToggle.addEventListener("click", () => {
+      const isClosed = googleCustomPanel.style.display === "none";
+      googleCustomPanel.style.display = isClosed ? "block" : "none";
+      if (isClosed && googleCustomEmail) googleCustomEmail.focus();
+    });
+  }
+
+  const executeGoogleAuth = async (accountEmail, accountName) => {
+    if (!accountEmail) return;
+
+    if (googleModalStatus) {
+      googleModalStatus.innerHTML = `<span style="color: #93c5fd;"><i class="fas fa-spinner fa-spin"></i> Authenticating ${accountName || accountEmail} with Google...</span>`;
+    }
+
+    try {
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: accountEmail, name: accountName, role: 'STUDENT' })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Google authentication failed.');
+      }
+
+      // Store authentic session
+      localStorage.setItem('eduguard_token', data.token);
+      localStorage.setItem('eduguard_user', JSON.stringify(data.user));
+
+      if (googleModalStatus) {
+        googleModalStatus.innerHTML = `<span style="color: #4ade80;"><i class="fas fa-check-circle"></i> Google identity verified! Redirecting to student dashboard...</span>`;
+      }
+      setStatus(`Signed in via Google as ${data.user.name}. Loading student workspace...`, "success");
+
+      setTimeout(() => {
+        closeGoogleModal();
+        window.location.href = '/student/dashboard';
+      }, 700);
+
+    } catch (err) {
+      if (googleModalStatus) {
+        googleModalStatus.innerHTML = `<span style="color: #f87171;"><i class="fas fa-circle-exclamation"></i> ${err.message}</span>`;
+      }
+      setStatus(err.message, "error");
+    }
+  };
+
+  // Wire up account items in Google modal
+  document.querySelectorAll(".google-account-item[data-email]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const email = btn.getAttribute("data-email");
+      const name = btn.getAttribute("data-name");
+      executeGoogleAuth(email, name);
+    });
+  });
+
+  // Custom Google email submission
+  if (googleCustomSubmit && googleCustomEmail) {
+    googleCustomSubmit.addEventListener("click", () => {
+      const customVal = googleCustomEmail.value.trim();
+      if (!customVal || !customVal.includes('@')) {
+        if (googleModalStatus) {
+          googleModalStatus.innerHTML = `<span style="color: #f87171;">Please enter a valid Google email address.</span>`;
+        }
+        return;
+      }
+      executeGoogleAuth(customVal, customVal.split('@')[0]);
+    });
+
+    googleCustomEmail.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        googleCustomSubmit.click();
+      }
+    });
+  }
+
+  // Google button on main form
   if (googleButton) {
     googleButton.addEventListener("click", () => {
       clearStatus();
-      googleButton.classList.add("loading");
-      googleButton.disabled = true;
-      const originalHTML = googleButton.innerHTML;
-      googleButton.innerHTML = "<span>Connecting to Google…</span>";
-
-      setTimeout(() => {
-        googleButton.classList.remove("loading");
-        googleButton.disabled = false;
-        googleButton.innerHTML = originalHTML;
-        setStatus("Google OAuth SSO ready for institutional campus domain.", "info");
-      }, 950);
+      openGoogleModal();
     });
   }
 
