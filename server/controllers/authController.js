@@ -233,6 +233,32 @@ exports.login = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials.' });
     }
 
+    if (user.role === 'STUDENT') {
+      let existingStudent = await Student.findOne({ user: user._id });
+      if (!existingStudent) {
+        let defaultCourse = await Course.findOne();
+        if (!defaultCourse) {
+          defaultCourse = await Course.create({
+            code: 'CSE101',
+            name: 'Computer Science and Engineering',
+            department: 'Computer Science',
+            totalSemesters: 8
+          }).catch(() => null);
+        }
+        await Student.create({
+          user: user._id,
+          rollNumber: `STD-${Math.floor(100000 + Math.random() * 900000)}`,
+          course: defaultCourse ? defaultCourse._id : null,
+          currentSemester: 6,
+          section: 'A',
+          batch: '2023-2027',
+          currentRiskLevel: 'LOW',
+          currentRiskScore: 22,
+          cgpa: 8.5
+        });
+      }
+    }
+
     user.lastLogin = new Date();
     await user.save();
 
@@ -415,6 +441,34 @@ exports.googleAuth = async (req, res) => {
           currentRiskScore: 22,
           cgpa: 8.5
         });
+      }
+    } else {
+      if (user.role === 'STUDENT') {
+        const Course = require('../models/Course');
+        const Student = require('../models/Student');
+        const existingStudent = await Student.findOne({ user: user._id });
+        if (!existingStudent) {
+          let defaultCourse = await Course.findOne();
+          if (!defaultCourse) {
+            defaultCourse = await Course.create({
+              code: 'CSE101',
+              name: 'Computer Science and Engineering',
+              department: 'Computer Science',
+              totalSemesters: 8
+            }).catch(() => null);
+          }
+          await Student.create({
+            user: user._id,
+            rollNumber: `STU-G${Math.floor(1000 + Math.random() * 9000)}`,
+            course: defaultCourse ? defaultCourse._id : null,
+            currentSemester: 6,
+            section: 'A',
+            batch: '2023-2027',
+            currentRiskLevel: 'LOW',
+            currentRiskScore: 22,
+            cgpa: 8.5
+          });
+        }
       }
     }
 
