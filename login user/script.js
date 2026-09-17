@@ -713,22 +713,70 @@
     }
   }
 
+  const GOOGLE_CLIENT_ID = "304812275269-vbgg8usmo95gc77g743bmu5tuh0l00fl.apps.googleusercontent.com";
+
+  const triggerGoogleNativeOAuth = () => {
+    clearStatus();
+    // 1. Try Google Identity Services OAuth2 Token Client (Native Google Account Chooser Popup)
+    if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
+      try {
+        const tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: GOOGLE_CLIENT_ID,
+          scope: 'email profile openid',
+          prompt: 'select_account',
+          callback: async (tokenResponse) => {
+            if (tokenResponse.error) {
+              if (tokenResponse.error !== 'popup_closed_by_user') {
+                setStatus(`Google authorization error: ${tokenResponse.error}`, "error");
+              }
+              return;
+            }
+            setStatus("Authenticating with your Google account...", "info");
+            try {
+              const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+              });
+              const profile = await userInfoRes.json();
+              if (profile && profile.email) {
+                await executeGoogleAuth(profile.email, profile.name || profile.email.split('@')[0], profile.picture || '');
+              } else {
+                throw new Error("Could not retrieve Google profile data.");
+              }
+            } catch (err) {
+              setStatus(`Google sign-in error: ${err.message}`, "error");
+            }
+          }
+        });
+        tokenClient.requestAccessToken({ prompt: 'select_account' });
+        return;
+      } catch (err) {
+        console.warn('[Google Auth] Native popup init failed, falling back:', err);
+      }
+    }
+
+    // 2. Try Google One-Tap prompt if initialized
+    if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+      try {
+        google.accounts.id.prompt();
+        return;
+      } catch (_) {}
+    }
+
+    // 3. Fallback to direct modal if Google libraries are blocked/offline
+    openGoogleModal();
+  };
+
   // Google button on main form
   if (googleButton) {
-    googleButton.addEventListener("click", () => {
-      clearStatus();
-      openGoogleModal();
-    });
+    googleButton.addEventListener("click", triggerGoogleNativeOAuth);
   }
 
-  // Google Identity Services (GSI) One-Tap handler (active only when valid production GOOGLE_CLIENT_ID is supplied)
+  // Google Identity Services (GSI) One-Tap handler
   window.addEventListener("load", () => {
-    // If an institutional Google Client ID is configured in meta tags or window, initialize GSI
-    const metaClientId = document.querySelector('meta[name="google-signin-client_id"]')?.content;
-    if (metaClientId && typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+    if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
       try {
         google.accounts.id.initialize({
-          client_id: metaClientId,
+          client_id: GOOGLE_CLIENT_ID,
           callback: (response) => {
             if (response && response.credential) {
               const payload = parseJwt(response.credential);
