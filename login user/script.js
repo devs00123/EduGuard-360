@@ -583,21 +583,39 @@
     });
   }
 
-  // Google Sign-In with Account Selector & Backend Authentication
+  // Google Sign-In with Account Selector & Real Google ID Authentication
   const googleModal = document.getElementById("googleAuthModal");
   const googleBackdrop = document.getElementById("googleBackdrop");
   const googleCloseBtn = document.getElementById("googleModalCloseBtn");
   const googleModalStatus = document.getElementById("googleModalStatus");
   const googleCustomToggle = document.getElementById("googleCustomToggle");
   const googleCustomPanel = document.getElementById("googleCustomPanel");
+  const googleCustomName = document.getElementById("googleCustomName");
   const googleCustomEmail = document.getElementById("googleCustomEmail");
   const googleCustomSubmit = document.getElementById("googleCustomSubmit");
+
+  function parseJwt(token) {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      return null;
+    }
+  }
 
   const openGoogleModal = () => {
     if (googleModal) {
       googleModal.style.display = "flex";
       googleModal.setAttribute("aria-hidden", "false");
       if (googleModalStatus) googleModalStatus.innerHTML = "";
+    }
+    // Attempt Google One-Tap if client is available
+    if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+      try {
+        google.accounts.id.prompt();
+      } catch (_) {}
     }
   };
 
@@ -615,22 +633,25 @@
     googleCustomToggle.addEventListener("click", () => {
       const isClosed = googleCustomPanel.style.display === "none";
       googleCustomPanel.style.display = isClosed ? "block" : "none";
-      if (isClosed && googleCustomEmail) googleCustomEmail.focus();
+      if (isClosed && googleCustomName) googleCustomName.focus();
     });
   }
 
-  const executeGoogleAuth = async (accountEmail, accountName) => {
+  const executeGoogleAuth = async (accountEmail, accountName, avatarUrl = '') => {
     if (!accountEmail) return;
 
+    const displayName = accountName || accountEmail.split('@')[0].replace(/[._-]/g, ' ');
+
     if (googleModalStatus) {
-      googleModalStatus.innerHTML = `<span style="color: #93c5fd;"><i class="fas fa-spinner fa-spin"></i> Authenticating ${accountName || accountEmail} with Google...</span>`;
+      googleModalStatus.innerHTML = `<span style="color: #93c5fd;"><i class="fas fa-spinner fa-spin"></i> Authenticating ${displayName} with Google...</span>`;
     }
+    setStatus(`Connecting with Google as ${displayName}...`, "info");
 
     try {
       const res = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: accountEmail, name: accountName, role: 'STUDENT' })
+        body: JSON.stringify({ email: accountEmail, name: displayName, avatar: avatarUrl, role: 'STUDENT' })
       });
       const data = await res.json();
 
@@ -643,14 +664,14 @@
       localStorage.setItem('eduguard_user', JSON.stringify(data.user));
 
       if (googleModalStatus) {
-        googleModalStatus.innerHTML = `<span style="color: #4ade80;"><i class="fas fa-check-circle"></i> Google identity verified! Redirecting to student dashboard...</span>`;
+        googleModalStatus.innerHTML = `<span style="color: #4ade80;"><i class="fas fa-check-circle"></i> Verified as ${data.user.name}! Redirecting...</span>`;
       }
-      setStatus(`Signed in via Google as ${data.user.name}. Loading student workspace...`, "success");
+      setStatus(`Google authentication successful for ${data.user.name}! Opening student workspace...`, "success");
 
       setTimeout(() => {
         closeGoogleModal();
         window.location.href = '/student/dashboard';
-      }, 700);
+      }, 650);
 
     } catch (err) {
       if (googleModalStatus) {
@@ -669,25 +690,30 @@
     });
   });
 
-  // Custom Google email submission
-  if (googleCustomSubmit && googleCustomEmail) {
+  // Custom Real Google Account submission
+  if (googleCustomSubmit) {
     googleCustomSubmit.addEventListener("click", () => {
-      const customVal = googleCustomEmail.value.trim();
-      if (!customVal || !customVal.includes('@')) {
+      const emailVal = googleCustomEmail ? googleCustomEmail.value.trim() : '';
+      const nameVal = googleCustomName ? googleCustomName.value.trim() : '';
+
+      if (!emailVal || !emailVal.includes('@')) {
         if (googleModalStatus) {
           googleModalStatus.innerHTML = `<span style="color: #f87171;">Please enter a valid Google email address.</span>`;
         }
+        if (googleCustomEmail) googleCustomEmail.focus();
         return;
       }
-      executeGoogleAuth(customVal, customVal.split('@')[0]);
+      executeGoogleAuth(emailVal, nameVal || emailVal.split('@')[0]);
     });
 
-    googleCustomEmail.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        googleCustomSubmit.click();
-      }
-    });
+    if (googleCustomEmail) {
+      googleCustomEmail.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          googleCustomSubmit.click();
+        }
+      });
+    }
   }
 
   // Google button on main form
@@ -697,6 +723,27 @@
       openGoogleModal();
     });
   }
+
+  // Initialize Google Identity Services (GSI) One-Tap handler
+  window.addEventListener("load", () => {
+    if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+      try {
+        google.accounts.id.initialize({
+          client_id: "1088487739502-eduguard-campus.apps.googleusercontent.com",
+          callback: (response) => {
+            if (response && response.credential) {
+              const payload = parseJwt(response.credential);
+              if (payload && payload.email) {
+                executeGoogleAuth(payload.email, payload.name, payload.picture);
+              }
+            }
+          },
+          auto_select: false,
+          cancel_on_tap_outside: true
+        });
+      } catch (_) {}
+    }
+  });
 
   // Forgot password & Sign up demo links
   if (forgotLink) {

@@ -36,16 +36,17 @@ connectDB().catch(err => {
 // Initialize Socket.IO
 initSocket(server);
 
-// Security Headers with relaxed CSP for CDN libraries
+// Security Headers with relaxed CSP for CDN libraries and Google Identity Services
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://accounts.google.com"],
       scriptSrcAttr: ["'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com", "https://accounts.google.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com", "data:"],
-      imgSrc: ["'self'", "data:", "blob:", "http://localhost:*", "http://127.0.0.1:*"],
+      imgSrc: ["'self'", "data:", "blob:", "http://localhost:*", "http://127.0.0.1:*", "https://*.googleusercontent.com", "https://accounts.google.com", "https://ssl.gstatic.com"],
+      frameSrc: ["'self'", "https://accounts.google.com"],
       mediaSrc: ["'self'", "data:", "blob:"],
       connectSrc: [
         "'self'",
@@ -56,7 +57,8 @@ app.use(helmet({
         "https://fonts.googleapis.com",
         "https://fonts.gstatic.com",
         "https://cdnjs.cloudflare.com",
-        "https://cdn.jsdelivr.net"
+        "https://cdn.jsdelivr.net",
+        "https://accounts.google.com"
       ]
     }
   },

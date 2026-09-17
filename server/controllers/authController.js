@@ -395,16 +395,25 @@ exports.googleAuth = async (req, res) => {
       if (targetRole === 'STUDENT') {
         const Course = require('../models/Course');
         const Student = require('../models/Student');
-        const defaultCourse = await Course.findOne();
+        let defaultCourse = await Course.findOne();
+        if (!defaultCourse) {
+          defaultCourse = await Course.create({
+            code: 'CSE101',
+            name: 'Computer Science and Engineering',
+            department: 'Computer Science',
+            totalSemesters: 8
+          }).catch(() => null);
+        }
         await Student.create({
           user: user._id,
-          name: user.name,
           rollNumber: `STU-G${Math.floor(1000 + Math.random() * 9000)}`,
-          email: user.email,
           course: defaultCourse ? defaultCourse._id : null,
-          semester: 6,
-          riskLevel: 'LOW',
-          riskScore: 28
+          currentSemester: 6,
+          section: 'A',
+          batch: '2023-2027',
+          currentRiskLevel: 'LOW',
+          currentRiskScore: 22,
+          cgpa: 8.5
         });
       }
     }

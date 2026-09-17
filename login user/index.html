@@ -31,6 +31,9 @@
   <!-- Main CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link rel="stylesheet" href="./style.css" />
+
+  <!-- Google Identity Services (GSI) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body>
@@ -473,23 +476,26 @@
             <i class="fas fa-chevron-right google-account-arrow"></i>
           </button>
 
-          <!-- Custom Account Toggle -->
+          <!-- Custom Real Google ID Section -->
           <button type="button" class="google-account-item google-custom-toggle" id="googleCustomToggle">
-            <div class="google-avatar-box" style="background: rgba(147, 197, 253, 0.12); border: 1px dashed rgba(147, 197, 253, 0.4);">
+            <div class="google-avatar-box" style="background: rgba(147, 197, 253, 0.14); border: 1px dashed rgba(147, 197, 253, 0.45);">
               <i class="fas fa-user-plus" style="font-size: 13px; color: #93c5fd;"></i>
             </div>
             <div class="google-account-info">
-              <div class="google-account-name">Use another Google account</div>
-              <div class="google-account-email">Sign in with any institutional or personal Google ID</div>
+              <div class="google-account-name">Sign in with your Real Google ID</div>
+              <div class="google-account-email">Use any personal @gmail.com or institutional Google account</div>
             </div>
           </button>
 
           <!-- Custom Account Input Panel (Collapsible) -->
-          <div id="googleCustomPanel" style="display: none; padding: 12px; background: rgba(3, 12, 22, 0.55); border-radius: 12px; margin-top: 4px; border: 1px solid rgba(147, 197, 253, 0.22);">
-            <div style="font-size: 11.5px; color: rgba(210, 230, 250, 0.85); margin-bottom: 6px; font-weight: 600;">Enter your Google account email:</div>
-            <div style="display: flex; gap: 8px;">
-              <input type="email" id="googleCustomEmail" placeholder="your.name@gmail.com or @college.edu" style="flex: 1; height: 38px; border-radius: 8px; background: rgba(7, 17, 31, 0.85); border: 1px solid rgba(147, 197, 253, 0.3); color: #fff; padding: 0 10px; font-size: 12px; outline: none;" />
-              <button type="button" id="googleCustomSubmit" style="height: 38px; padding: 0 14px; background: linear-gradient(110deg, #70c8ff, #8e8fff); border: none; border-radius: 8px; color: #07111f; font-weight: 700; font-size: 12px; cursor: pointer;">Continue</button>
+          <div id="googleCustomPanel" style="display: none; padding: 14px; background: rgba(3, 12, 22, 0.7); border-radius: 14px; margin-top: 4px; border: 1px solid rgba(147, 197, 253, 0.28);">
+            <div style="font-size: 11.5px; color: #93c5fd; margin-bottom: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Enter Your Google Account Details:</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <input type="text" id="googleCustomName" placeholder="Your Full Name (e.g. Dev Sharma)" style="width: 100%; height: 40px; border-radius: 8px; background: rgba(7, 17, 31, 0.9); border: 1px solid rgba(147, 197, 253, 0.3); color: #fff; padding: 0 12px; font-size: 12.5px; outline: none;" />
+              <div style="display: flex; gap: 8px;">
+                <input type="email" id="googleCustomEmail" placeholder="your.real.email@gmail.com or @college.edu" style="flex: 1; height: 40px; border-radius: 8px; background: rgba(7, 17, 31, 0.9); border: 1px solid rgba(147, 197, 253, 0.3); color: #fff; padding: 0 12px; font-size: 12.5px; outline: none;" />
+                <button type="button" id="googleCustomSubmit" style="height: 40px; padding: 0 16px; background: linear-gradient(110deg, #70c8ff, #8e8fff); border: none; border-radius: 8px; color: #07111f; font-weight: 800; font-size: 12.5px; cursor: pointer; white-space: nowrap;">Sign In</button>
+              </div>
             </div>
           </div>
         </div>

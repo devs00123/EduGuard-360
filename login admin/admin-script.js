@@ -436,14 +436,32 @@
   const googleModalStatus = document.getElementById("googleModalStatus");
   const googleCustomToggle = document.getElementById("googleCustomToggle");
   const googleCustomPanel = document.getElementById("googleCustomPanel");
+  const googleCustomName = document.getElementById("googleCustomName");
   const googleCustomEmail = document.getElementById("googleCustomEmail");
   const googleCustomSubmit = document.getElementById("googleCustomSubmit");
+
+  function parseJwt(token) {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      return null;
+    }
+  }
 
   const openGoogleModal = () => {
     if (googleModal) {
       googleModal.style.display = "flex";
       googleModal.setAttribute("aria-hidden", "false");
       if (googleModalStatus) googleModalStatus.innerHTML = "";
+    }
+    // Attempt Google One-Tap if client is available
+    if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+      try {
+        google.accounts.id.prompt();
+      } catch (_) {}
     }
   };
 
@@ -461,22 +479,26 @@
     googleCustomToggle.addEventListener("click", () => {
       const isClosed = googleCustomPanel.style.display === "none";
       googleCustomPanel.style.display = isClosed ? "block" : "none";
-      if (isClosed && googleCustomEmail) googleCustomEmail.focus();
+      if (isClosed && googleCustomName) googleCustomName.focus();
     });
   }
 
   const executeGoogleWorkspaceAuth = async (accountEmail, accountName, accountRole) => {
     if (!accountEmail) return;
 
+    const displayName = accountName || accountEmail.split('@')[0].replace(/[._-]/g, ' ');
+    const targetRole = accountRole || (currentRole === "admin" ? "ADMIN" : "FACULTY");
+
     if (googleModalStatus) {
-      googleModalStatus.innerHTML = `<span style="color: #93c5fd;"><i class="fas fa-spinner fa-spin"></i> Authenticating ${accountName || accountEmail} with Google Workspace...</span>`;
+      googleModalStatus.innerHTML = `<span style="color: #93c5fd;"><i class="fas fa-spinner fa-spin"></i> Authenticating ${displayName} with Google Workspace...</span>`;
     }
+    setFeedback(`Connecting to Google Workspace as ${displayName}...`, "info");
 
     try {
       const res = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: accountEmail, name: accountName, role: accountRole || 'FACULTY' })
+        body: JSON.stringify({ email: accountEmail, name: displayName, role: targetRole })
       });
       const data = await res.json();
 
@@ -490,7 +512,7 @@
 
       const role = data.user.role;
       if (googleModalStatus) {
-        googleModalStatus.innerHTML = `<span style="color: #4ade80;"><i class="fas fa-check-circle"></i> Institutional clearance verified! Launching workspace...</span>`;
+        googleModalStatus.innerHTML = `<span style="color: #4ade80;"><i class="fas fa-check-circle"></i> Institutional clearance verified for ${data.user.name}!</span>`;
       }
       setFeedback(`Institutional SSO verified for ${data.user.name} (${role.replace('_', ' ')}). Launching workspace...`, "success");
 
@@ -502,6 +524,8 @@
           window.location.href = '/admin/dashboard';
         } else if (role === "DEPARTMENT_HEAD") {
           window.location.href = '/department-head/dashboard';
+        } else if (role === "STUDENT") {
+          window.location.href = '/student/dashboard';
         } else {
           window.location.href = '/staff/dashboard';
         }
@@ -526,24 +550,29 @@
   });
 
   // Custom Google email submission
-  if (googleCustomSubmit && googleCustomEmail) {
+  if (googleCustomSubmit) {
     googleCustomSubmit.addEventListener("click", () => {
-      const customVal = googleCustomEmail.value.trim();
-      if (!customVal || !customVal.includes('@')) {
+      const emailVal = googleCustomEmail ? googleCustomEmail.value.trim() : '';
+      const nameVal = googleCustomName ? googleCustomName.value.trim() : '';
+
+      if (!emailVal || !emailVal.includes('@')) {
         if (googleModalStatus) {
           googleModalStatus.innerHTML = `<span style="color: #f87171;">Please enter a valid Google Workspace email address.</span>`;
         }
+        if (googleCustomEmail) googleCustomEmail.focus();
         return;
       }
-      executeGoogleWorkspaceAuth(customVal, customVal.split('@')[0], 'FACULTY');
+      executeGoogleWorkspaceAuth(emailVal, nameVal || emailVal.split('@')[0], currentRole === "admin" ? "ADMIN" : "FACULTY");
     });
 
-    googleCustomEmail.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        googleCustomSubmit.click();
-      }
-    });
+    if (googleCustomEmail) {
+      googleCustomEmail.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          googleCustomSubmit.click();
+        }
+      });
+    }
   }
 
   // Google button on main form
@@ -553,6 +582,27 @@
       openGoogleModal();
     });
   }
+
+  // Initialize Google Identity Services (GSI) One-Tap handler
+  window.addEventListener("load", () => {
+    if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+      try {
+        google.accounts.id.initialize({
+          client_id: "1088487739502-eduguard-campus.apps.googleusercontent.com",
+          callback: (response) => {
+            if (response && response.credential) {
+              const payload = parseJwt(response.credential);
+              if (payload && payload.email) {
+                executeGoogleWorkspaceAuth(payload.email, payload.name, currentRole === "admin" ? "ADMIN" : "FACULTY");
+              }
+            }
+          },
+          auto_select: false,
+          cancel_on_tap_outside: true
+        });
+      } catch (_) {}
+    }
+  });
 
   // Forgot credentials link
   if (forgotLink) {
