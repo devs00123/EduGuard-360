@@ -1,0 +1,16 @@
+{
+  "name": "EduGuard 360",
+  "short_name": "EduGuard360",
+  "description": "AI-Powered Student Success & Smart Campus Support Platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "/img/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
