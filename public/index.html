@@ -4,6 +4,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EduGuard 360 | AI Student Success & Smart Campus Support Platform</title>
+
+  <!-- Instant Client-Side Auth Guard: Redirect unauthenticated visitors to Student Login -->
+  <script>
+    (function() {
+      try {
+        var token = localStorage.getItem('eduguard_token');
+        var user = localStorage.getItem('eduguard_user');
+        if (!token || !user) {
+          window.location.replace('/student/login');
+        }
+      } catch (e) {
+        window.location.replace('/student/login');
+      }
+    })();
+  </script>
+
   <meta name="description" content="EduGuard 360: AI-Powered Academic Risk Prediction, Early Mentorship Interventions, and Smart Campus Complaint Resolution." />
   <meta name="theme-color" content="#6366f1" />
   <link rel="manifest" href="/manifest.json" />

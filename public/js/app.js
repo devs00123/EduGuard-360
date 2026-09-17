@@ -201,8 +201,11 @@ const App = {
     let user = API.getUser();
     let token = API.getToken();
     if (!user || !token) {
-      // In demo mode, fallback to student demo role
-      await this.switchRole('STUDENT');
+      // Unauthenticated visitor -> Redirect to student login page
+      API.setToken(null);
+      API.setUser(null);
+      window.location.replace('/student/login');
+      return;
     } else {
       try {
         const meRes = await API.getMe();
@@ -220,11 +223,17 @@ const App = {
 
           this.renderCurrentView();
         } else {
-          await this.switchRole('STUDENT');
+          API.setToken(null);
+          API.setUser(null);
+          window.location.replace('/student/login');
+          return;
         }
       } catch (err) {
-        console.warn('[App] Session expired or database reseeded:', err.message);
-        await this.switchRole('STUDENT');
+        console.warn('[App] Session expired or invalid:', err.message);
+        API.setToken(null);
+        API.setUser(null);
+        window.location.replace('/student/login');
+        return;
       }
     }
 

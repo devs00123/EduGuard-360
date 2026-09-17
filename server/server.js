@@ -139,6 +139,9 @@ app.get('/staff/register', (req, res) => {
 app.get('/portal', (req, res) => {
   res.sendFile(path.resolve(__dirname, '../public/portal.html'));
 });
+app.get('/login', (req, res) => {
+  res.redirect('/student/login');
+});
 app.get(['/student/dashboard', '/faculty/dashboard', '/staff/dashboard', '/department-head/dashboard', '/admin/dashboard'], (req, res) => {
   res.sendFile(path.resolve(__dirname, '../public/index.html'));
 });

@@ -566,6 +566,23 @@
     });
   }
 
+  // Evaluator Demo Access Autofill
+  const demoFillBtn = document.getElementById("fillDemoStudentBtn");
+  if (demoFillBtn) {
+    demoFillBtn.addEventListener("click", () => {
+      if (emailInput) {
+        emailInput.value = "student@eduguard.edu";
+        emailInput.dispatchEvent(new Event('input'));
+      }
+      if (passwordInput) {
+        passwordInput.value = "student123";
+        passwordInput.dispatchEvent(new Event('input'));
+      }
+      clearStatus();
+      setStatus("Demo student credentials loaded. Click 'Log in' to enter.", "info");
+    });
+  }
+
   // Google sign-in demo
   if (googleButton) {
     googleButton.addEventListener("click", () => {
