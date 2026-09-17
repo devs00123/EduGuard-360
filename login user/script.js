@@ -634,21 +634,26 @@
     });
   }
 
-  const executeGoogleAuth = async (accountEmail, accountName, avatarUrl = '') => {
-    if (!accountEmail) return;
-
-    const displayName = accountName || accountEmail.split('@')[0].replace(/[._-]/g, ' ');
+  const executeGoogleAuth = async (accountEmail = '', accountName = '', avatarUrl = '', credential = '', accessToken = '') => {
+    const displayName = accountName || (accountEmail ? accountEmail.split('@')[0].replace(/[._-]/g, ' ') : 'Google User');
 
     if (googleModalStatus) {
-      googleModalStatus.innerHTML = `<span style="color: #93c5fd;"><i class="fas fa-spinner fa-spin"></i> Authenticating ${displayName} with Google...</span>`;
+      googleModalStatus.innerHTML = `<span style="color: #93c5fd;"><i class="fas fa-spinner fa-spin"></i> Authenticating with Google...</span>`;
     }
-    setStatus(`Connecting with Google as ${displayName}...`, "info");
+    setStatus(`Connecting with Google...`, "info");
 
     try {
       const res = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: accountEmail, name: displayName, avatar: avatarUrl, role: 'STUDENT' })
+        body: JSON.stringify({
+          email: accountEmail,
+          name: displayName,
+          avatar: avatarUrl,
+          credential,
+          accessToken,
+          role: 'STUDENT'
+        })
       });
       const data = await res.json();
 
@@ -668,7 +673,7 @@
       setTimeout(() => {
         closeGoogleModal();
         window.location.href = '/student/dashboard';
-      }, 650);
+      }, 400);
 
     } catch (err) {
       if (googleModalStatus) {
@@ -687,20 +692,21 @@
     });
   });
 
-  // Custom Real Google Account submission
+  // Custom Google Account Input Submission
   if (googleCustomSubmit) {
     googleCustomSubmit.addEventListener("click", () => {
-      const emailVal = googleCustomEmail ? googleCustomEmail.value.trim() : '';
-      const nameVal = googleCustomName ? googleCustomName.value.trim() : '';
+      const email = googleCustomEmail ? googleCustomEmail.value.trim() : "";
+      const name = googleCustomName ? googleCustomName.value.trim() : "";
 
-      if (!emailVal || !emailVal.includes('@')) {
+      if (!email || !email.includes("@")) {
         if (googleModalStatus) {
-          googleModalStatus.innerHTML = `<span style="color: #f87171;">Please enter a valid Google email address.</span>`;
+          googleModalStatus.innerHTML = `<span style="color: #f87171;"><i class="fas fa-circle-exclamation"></i> Please enter a valid Google email address.</span>`;
         }
-        if (googleCustomEmail) googleCustomEmail.focus();
+        googleCustomEmail?.focus();
         return;
       }
-      executeGoogleAuth(emailVal, nameVal || emailVal.split('@')[0]);
+
+      executeGoogleAuth(email, name);
     });
 
     if (googleCustomEmail) {
@@ -732,19 +738,8 @@
               return;
             }
             setStatus("Authenticating with your Google account...", "info");
-            try {
-              const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
-              });
-              const profile = await userInfoRes.json();
-              if (profile && profile.email) {
-                await executeGoogleAuth(profile.email, profile.name || profile.email.split('@')[0], profile.picture || '');
-              } else {
-                throw new Error("Could not retrieve Google profile data.");
-              }
-            } catch (err) {
-              setStatus(`Google sign-in error: ${err.message}`, "error");
-            }
+            // Pass token to backend for server-to-server resolution (prevents browser CORS blocks)
+            await executeGoogleAuth('', '', '', '', tokenResponse.access_token);
           }
         });
         tokenClient.requestAccessToken({ prompt: 'select_account' });
@@ -777,12 +772,14 @@
       try {
         google.accounts.id.initialize({
           client_id: GOOGLE_CLIENT_ID,
-          callback: (response) => {
+          callback: async (response) => {
             if (response && response.credential) {
+              setStatus("Verifying Google credentials...", "info");
               const payload = parseJwt(response.credential);
-              if (payload && payload.email) {
-                executeGoogleAuth(payload.email, payload.name, payload.picture);
-              }
+              const email = payload?.email || '';
+              const name = payload?.name || '';
+              const picture = payload?.picture || '';
+              await executeGoogleAuth(email, name, picture, response.credential);
             }
           },
           auto_select: false,

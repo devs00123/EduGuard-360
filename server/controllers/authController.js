@@ -378,10 +378,51 @@ exports.logout = async (req, res) => {
 
 exports.googleAuth = async (req, res) => {
   try {
-    const { email, name, avatar, role: requestedRole } = req.body;
+    let { email, name, avatar, credential, accessToken, role: requestedRole } = req.body;
+
+    // 1. If Google ID Token (credential) was passed, decode it
+    if (credential && !email) {
+      try {
+        const decoded = jwt.decode(credential);
+        if (decoded && decoded.email) {
+          email = decoded.email;
+          name = name || decoded.name;
+          avatar = avatar || decoded.picture;
+        }
+      } catch (e) {
+        console.warn('[Google Auth] JWT decode error:', e.message);
+      }
+    }
+
+    // 2. If OAuth2 accessToken was passed, fetch userinfo server-to-server (No browser CORS issues!)
+    if (accessToken && !email) {
+      try {
+        const https = require('https');
+        const profile = await new Promise((resolve, reject) => {
+          const uReq = https.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${accessToken}`, 'User-Agent': 'EduGuard360-Auth' }
+          }, (resp) => {
+            let data = '';
+            resp.on('data', chunk => data += chunk);
+            resp.on('end', () => {
+              try { resolve(JSON.parse(data)); } catch (e) { resolve(null); }
+            });
+          });
+          uReq.on('error', reject);
+        });
+
+        if (profile && profile.email) {
+          email = profile.email;
+          name = name || profile.name;
+          avatar = avatar || profile.picture;
+        }
+      } catch (err) {
+        console.warn('[Google Auth] Server userinfo fetch error:', err.message);
+      }
+    }
 
     if (!email) {
-      return res.status(400).json({ success: false, message: 'Google account email is required.' });
+      return res.status(400).json({ success: false, message: 'Google account email or valid credential is required.' });
     }
 
     const cleanEmail = email.toLowerCase().trim();

@@ -477,22 +477,20 @@
     });
   }
 
-  const executeGoogleWorkspaceAuth = async (accountEmail, accountName, accountRole) => {
-    if (!accountEmail) return;
-
-    const displayName = accountName || accountEmail.split('@')[0].replace(/[._-]/g, ' ');
+  const executeGoogleWorkspaceAuth = async (accountEmail = '', accountName = '', accountRole = '', credential = '', accessToken = '') => {
+    const displayName = accountName || (accountEmail ? accountEmail.split('@')[0].replace(/[._-]/g, ' ') : 'Institutional User');
     const targetRole = accountRole || (currentRole === "admin" ? "ADMIN" : "FACULTY");
 
     if (googleModalStatus) {
       googleModalStatus.innerHTML = `<span style="color: #93c5fd;"><i class="fas fa-spinner fa-spin"></i> Authenticating ${displayName} with Google Workspace...</span>`;
     }
-    setFeedback(`Connecting to Google Workspace as ${displayName}...`, "info");
+    setFeedback(`Connecting to Google Workspace...`, "info");
 
     try {
       const res = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: accountEmail, name: displayName, role: targetRole })
+        body: JSON.stringify({ email: accountEmail, name: displayName, role: targetRole, credential, accessToken })
       });
       const data = await res.json();
 
@@ -587,19 +585,7 @@
               return;
             }
             setFeedback("Authenticating institutional Google account...", "info");
-            try {
-              const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
-              });
-              const profile = await userInfoRes.json();
-              if (profile && profile.email) {
-                await executeGoogleWorkspaceAuth(profile.email, profile.name || profile.email.split('@')[0], currentRole === "admin" ? "ADMIN" : "FACULTY");
-              } else {
-                throw new Error("Could not retrieve Google profile data.");
-              }
-            } catch (err) {
-              setFeedback(`Google sign-in error: ${err.message}`, "error");
-            }
+            await executeGoogleWorkspaceAuth('', '', currentRole === "admin" ? "ADMIN" : "FACULTY", '', tokenResponse.access_token);
           }
         });
         tokenClient.requestAccessToken({ prompt: 'select_account' });
