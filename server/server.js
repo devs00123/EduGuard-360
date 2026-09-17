@@ -123,9 +123,15 @@ const searchLimiter = rateLimit({
 app.use('/student', express.static(path.resolve(__dirname, '../login user')));
 app.use('/staff', express.static(path.resolve(__dirname, '../login admin')));
 app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
-app.use(express.static(path.resolve(__dirname, '../public')));
+// Disable default index.html serving so root URL "/" does not bypass authentication
+app.use(express.static(path.resolve(__dirname, '../public'), { index: false }));
 
 // Authentication Portals & Direct Routes
+// Root route: Redirect all root visits (e.g., when opening the Render deployment) to Student Login
+app.get('/', (req, res) => {
+  res.redirect('/student/login');
+});
+
 app.get('/student/login', (req, res) => {
   res.sendFile(path.resolve(__dirname, '../login user/index.html'));
 });
@@ -144,7 +150,7 @@ app.get('/portal', (req, res) => {
 app.get('/login', (req, res) => {
   res.redirect('/student/login');
 });
-app.get(['/student/dashboard', '/faculty/dashboard', '/staff/dashboard', '/department-head/dashboard', '/admin/dashboard'], (req, res) => {
+app.get(['/dashboard', '/student/dashboard', '/faculty/dashboard', '/staff/dashboard', '/department-head/dashboard', '/admin/dashboard'], (req, res) => {
   res.sendFile(path.resolve(__dirname, '../public/index.html'));
 });
 
