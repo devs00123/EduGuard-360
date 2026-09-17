@@ -7,7 +7,8 @@ const {
   getMyAssignments,
   getMyPerformance,
   getMyRisk,
-  getMySupportInsights
+  getMySupportInsights,
+  getMyRiskHistory
 } = require('../controllers/studentController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -20,6 +21,7 @@ router.get('/me/marks', getMyMarks);
 router.get('/me/assignments', getMyAssignments);
 router.get('/me/performance', getMyPerformance);
 router.get('/me/risk', getMyRisk);
+router.get('/me/risk-history', getMyRiskHistory);
 router.get('/me/support-insights', getMySupportInsights);
 
 module.exports = router;

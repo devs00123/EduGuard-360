@@ -263,7 +263,7 @@ async function seed() {
     mentorFaculty: facultyUser._id,
     cgpa: 7.03,
     currentRiskLevel: 'HIGH',
-    currentRiskScore: 76
+    currentRiskScore: 70
   });
 
   const studentAnanya = await Student.create({
@@ -442,11 +442,11 @@ async function seed() {
     remarks: 'Notable decline in midterms and lab evaluations'
   });
 
-  console.log('[Seed] 9. Creating Explainable Risk Assessment for Rahul (76/100, HIGH)...');
+  console.log('[Seed] 9. Creating Explainable Risk Assessment for Rahul (70/100, HIGH)...');
   await RiskAssessment.create({
     student: studentRahul._id,
     riskLevel: 'HIGH',
-    riskScore: 76,
+    riskScore: 70,
     metrics: {
       attendancePercentage: 62,
       internalMarksAverage: 48,
@@ -465,23 +465,23 @@ async function seed() {
       {
         factor: 'Internal marks below passing benchmark',
         severity: 'HIGH',
-        impactScore: 25,
+        impactScore: 20,
         detail: 'Average internal assessment score is 48% (below the 50% passing threshold), with critical weakness in DAA (42%) and DBMS (44%).'
       },
       {
         factor: 'Pending assignments backlog',
         severity: 'MEDIUM',
-        impactScore: 12,
+        impactScore: 13,
         detail: '4 incomplete assignments remaining across semester modules (60% completion rate).'
       },
       {
         factor: 'Performance trend: Declining',
         severity: 'MEDIUM',
-        impactScore: 14,
+        impactScore: 12,
         detail: 'SGPA has steadily dropped from 7.8 (Sem 1) to 7.2 (Sem 2) and 6.1 (Sem 3).'
       }
     ],
-    explanation: 'Academic risk is elevated (76/100 - HIGH) because attendance is 62% (below the required 75% threshold), internal marks average is 48%, 4 course assignments are currently pending, and recent performance shows a consistent downward trend. Early intervention and targeted mentoring are strongly advised.',
+    explanation: 'Academic risk is elevated (70/100 - HIGH) because attendance is 62% (below the required 75% threshold), internal marks average is 48%, 4 course assignments are currently pending, and recent performance shows a consistent downward trend. Early intervention and targeted mentoring are strongly advised.',
     recommendations: [
       {
         category: 'ATTENDANCE',

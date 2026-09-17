@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: eduguard-360
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DEMO_MODE
+        value: "true"
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: SLA_CRITICAL_HOURS
+        value: "4"
+      - key: SLA_HIGH_HOURS
+        value: "12"
+      - key: SLA_MEDIUM_HOURS
+        value: "24"
+      - key: SLA_LOW_HOURS
+        value: "48"

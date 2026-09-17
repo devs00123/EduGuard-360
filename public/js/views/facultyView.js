@@ -15,15 +15,17 @@ const FacultyView = {
     `;
 
     try {
-      const [studentsRes, classesRes, atRiskRes] = await Promise.all([
+      const [studentsRes, classesRes, atRiskRes, invSummaryRes] = await Promise.all([
         API.getFacultyStudents(),
         API.getFacultyClasses(),
-        API.getAtRiskStudents()
+        API.getAtRiskStudents(),
+        API.getInterventionsSummary().catch(() => ({ summary: { active: 0, upcomingFollowUps: 0, overdueFollowUps: 0, completed: 0 } }))
       ]);
 
       const students = studentsRes.students || [];
       const atRisk = atRiskRes.students || [];
       const subjects = classesRes.subjects || [];
+      const invSummary = invSummaryRes.summary || { active: 0, upcomingFollowUps: 0, overdueFollowUps: 0, completed: 0 };
 
       container.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
@@ -31,7 +33,10 @@ const FacultyView = {
             <h2 style="font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em;">Faculty Academic Mentorship Portal 👩‍🏫</h2>
             <p style="color: var(--text-secondary); font-size: 0.875rem;">Identify at-risk students, track indicators, and manage early interventions.</p>
           </div>
-          <div style="display: flex; gap: 10px;">
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button id="btn-quick-create-asg" class="btn btn-primary btn-sm">
+              <i class="fas fa-plus-circle"></i> Create Assignment
+            </button>
             <button id="btn-quick-record-att" class="btn btn-secondary btn-sm">
               <i class="fas fa-check-double"></i> Mark Attendance
             </button>
@@ -43,49 +48,49 @@ const FacultyView = {
 
         <!-- Metric Cards -->
         <div class="metrics-grid">
-          <div class="stat-card">
-            <div>
-              <div class="stat-title">Total Mentored Students</div>
-              <div class="stat-value">${students.length}</div>
-              <div class="stat-meta">Semester 4 • B.Tech CSE</div>
-            </div>
-            <div class="stat-icon-wrapper">
-              <i class="fas fa-user-graduate"></i>
-            </div>
-          </div>
-
           <div class="stat-card risk-high">
             <div>
               <div class="stat-title">At-Risk Students</div>
               <div class="stat-value" style="color: var(--risk-high);">${atRisk.length}</div>
-              <div class="stat-meta">Requiring proactive attention</div>
+              <div class="stat-meta">Requiring proactive intervention</div>
             </div>
             <div class="stat-icon-wrapper" style="background: var(--risk-high-bg); color: var(--risk-high);">
               <i class="fas fa-triangle-exclamation"></i>
             </div>
           </div>
 
-          <div class="stat-card risk-critical">
+          <div class="stat-card">
             <div>
-              <div class="stat-title">Critical Attention Needed</div>
-              <div class="stat-value" style="color: var(--risk-critical);">
-                ${students.filter(s => s.riskLevel === 'CRITICAL').length}
-              </div>
-              <div class="stat-meta">Score >= 75/100</div>
+              <div class="stat-title">Active Interventions</div>
+              <div class="stat-value" style="color: var(--primary);">${invSummary.active || 0}</div>
+              <div class="stat-meta">Ongoing academic support plans</div>
             </div>
-            <div class="stat-icon-wrapper" style="background: var(--risk-critical-bg); color: var(--risk-critical);">
-              <i class="fas fa-skull-crossbones"></i>
+            <div class="stat-icon-wrapper">
+              <i class="fas fa-hands-holding-child"></i>
+            </div>
+          </div>
+
+          <div class="stat-card ${invSummary.overdueFollowUps > 0 ? 'risk-critical' : 'risk-low'}">
+            <div>
+              <div class="stat-title">Follow-Ups (7-Day / Overdue)</div>
+              <div class="stat-value" style="color: ${invSummary.overdueFollowUps > 0 ? 'var(--risk-critical)' : 'var(--risk-low)'};">
+                ${invSummary.upcomingFollowUps || 0} / <span style="font-size: 1.1rem; color: var(--risk-critical);">${invSummary.overdueFollowUps || 0}</span>
+              </div>
+              <div class="stat-meta">${invSummary.overdueFollowUps > 0 ? '⚠️ Overdue follow-up sessions pending' : 'All scheduled sessions on track'}</div>
+            </div>
+            <div class="stat-icon-wrapper" style="background: ${invSummary.overdueFollowUps > 0 ? 'var(--risk-critical-bg)' : 'rgba(16, 185, 129, 0.1)'}; color: ${invSummary.overdueFollowUps > 0 ? 'var(--risk-critical)' : 'var(--risk-low)'};">
+              <i class="fas fa-calendar-check"></i>
             </div>
           </div>
 
           <div class="stat-card risk-low">
             <div>
-              <div class="stat-title">Assigned Course Modules</div>
-              <div class="stat-value" style="color: var(--primary);">${subjects.length}</div>
-              <div class="stat-meta">DBMS, OS, CN, DAA, SE</div>
+              <div class="stat-title">Resolved Interventions</div>
+              <div class="stat-value" style="color: var(--risk-low);">${invSummary.completed || 0}</div>
+              <div class="stat-meta">Successfully improved performance</div>
             </div>
             <div class="stat-icon-wrapper">
-              <i class="fas fa-chalkboard-user"></i>
+              <i class="fas fa-circle-check"></i>
             </div>
           </div>
         </div>
@@ -198,6 +203,11 @@ const FacultyView = {
           const studentId = btn.getAttribute('data-id');
           FacultyView.openStudentDetailModal(studentId);
         });
+      });
+
+      // Quick Create Assignment Button
+      document.getElementById('btn-quick-create-asg')?.addEventListener('click', () => {
+        FacultyView.openCreateAssignmentModal(subjects);
       });
 
       // Quick Mark Attendance Button
@@ -507,5 +517,72 @@ Attend remedial Saturday tutorial session</textarea>
         UI.toast(err.message, 'error');
       }
     });
+  },
+
+  openCreateAssignmentModal(subjects = []) {
+    UI.showModal({
+      title: 'Publish Coursework Assignment',
+      body: `
+        <form id="form-create-assignment">
+          <div class="form-group">
+            <label style="font-size: 0.85rem; font-weight: 600;">Assigned Subject *</label>
+            <select id="asg-subject" class="form-control" style="width: 100%; padding: 8px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);" required>
+              ${subjects.map(sub => `<option value="${sub._id}">${sub.code} - ${sub.name} (Semester ${sub.semester || 4})</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group" style="margin-top: 12px;">
+            <label style="font-size: 0.85rem; font-weight: 600;">Assignment Title *</label>
+            <input type="text" id="asg-title" class="form-control" style="width: 100%; padding: 8px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);" placeholder="e.g. Lab 3: SQL Triggers & Stored Procedures" required>
+          </div>
+          <div class="form-group" style="margin-top: 12px;">
+            <label style="font-size: 0.85rem; font-weight: 600;">Description & Submission Criteria</label>
+            <textarea id="asg-desc" class="form-control" rows="3" style="width: 100%; padding: 8px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);" placeholder="Instructions for cohort students..."></textarea>
+          </div>
+          <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
+            <div class="form-group">
+              <label style="font-size: 0.85rem; font-weight: 600;">Due Date *</label>
+              <input type="date" id="asg-duedate" class="form-control" style="width: 100%; padding: 8px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);" required>
+            </div>
+            <div class="form-group">
+              <label style="font-size: 0.85rem; font-weight: 600;">Max Marks</label>
+              <input type="number" id="asg-maxscore" class="form-control" style="width: 100%; padding: 8px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary);" value="10" min="1" max="100">
+            </div>
+          </div>
+        </form>
+      `,
+      footer: `
+        <button class="btn btn-outline" style="padding: 6px 14px; margin-right: 8px;" onclick="UI.closeModal()">Cancel</button>
+        <button class="btn btn-primary" id="btn-submit-assignment" style="padding: 6px 14px;">Publish Assignment</button>
+      `
+    });
+
+    const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const dueEl = document.getElementById('asg-duedate');
+    if (dueEl) dueEl.value = nextWeek;
+
+    document.getElementById('btn-submit-assignment')?.addEventListener('click', async () => {
+      const subjectId = document.getElementById('asg-subject')?.value;
+      const title = document.getElementById('asg-title')?.value?.trim();
+      const description = document.getElementById('asg-desc')?.value?.trim();
+      const dueDate = document.getElementById('asg-duedate')?.value;
+      const maxScore = parseInt(document.getElementById('asg-maxscore')?.value || '10');
+
+      if (!subjectId || !title || !dueDate) {
+        UI.toast('Please fill all required assignment fields', 'warning');
+        return;
+      }
+
+      try {
+        await API.createAssignment({ subjectId, title, description, dueDate, maxScore });
+        UI.toast('Assignment published to enrolled cohort students!', 'success');
+        UI.closeModal();
+      } catch (err) {
+        UI.toast(`Failed to create assignment: ${err.message}`, 'error');
+      }
+    });
+  },
+
+  openStudentProfileModal(studentId) {
+    return this.openStudentDetailModal(studentId);
   }
 };

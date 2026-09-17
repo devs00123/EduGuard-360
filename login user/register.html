@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#07111f" />
+  <title>EduGuard 360 — Student Registration</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="./style.css" />
+  <style>
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 600px) {
+      .form-grid-2 {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+    }
+    select.reg-select {
+      width: 100%;
+      height: 48px;
+      padding: 0 14px;
+      border-radius: 12px;
+      background: rgba(10, 24, 45, 0.72);
+      border: 1px solid rgba(80, 140, 220, 0.22);
+      color: #e6f1ff;
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    select.reg-select:focus {
+      border-color: #6366f1;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="login-page" id="loginPage">
+
+    <!-- BACKGROUND VIDEO & DEPTH LAYERS -->
+    <div class="video-container" id="videoContainer" aria-hidden="true">
+      <video
+        class="background-video"
+        id="backgroundVideo"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="auto"
+        poster="./assets/campus-fix-login-bg.png"
+      >
+        <source src="./assets/campus-fix-login-bg.mp4" type="video/mp4" />
+      </video>
+    </div>
+
+    <div class="background-overlay" id="backgroundOverlay" aria-hidden="true"></div>
+    <div class="background-glow" id="backgroundGlow" aria-hidden="true"></div>
+    <canvas id="ambientCanvas" class="ambient-3d-canvas" aria-hidden="true"></canvas>
+
+    <!-- REGISTRATION SHELL -->
+    <section class="login-shell" aria-label="Student Registration">
+      <div class="login-card" id="loginCard" style="max-width: 520px;">
+
+        <!-- BRAND -->
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="brand-name">
+            EduGuard <strong>360</strong>
+          </div>
+        </div>
+
+        <!-- INTRO -->
+        <div class="intro">
+          <p class="eyebrow">STUDENT PORTAL ONBOARDING</p>
+          <h1>Create your account.</h1>
+          <p class="subtext">
+            Register your verified student profile for real-time academic risk monitoring and campus assistance.
+          </p>
+        </div>
+
+        <!-- REGISTRATION FORM -->
+        <form id="registerForm" novalidate>
+
+          <!-- FULL NAME & ROLL NUMBER -->
+          <div class="form-grid-2">
+            <label class="field">
+              <span>Full Name *</span>
+              <div class="input-wrap">
+                <input id="regName" type="text" placeholder="e.g. Rahul Sharma" required />
+              </div>
+              <small class="field-error" id="nameError"></small>
+            </label>
+
+            <label class="field">
+              <span>Student Roll No *</span>
+              <div class="input-wrap">
+                <input id="regRollNumber" type="text" placeholder="e.g. STD-2023-088" required />
+              </div>
+              <small class="field-error" id="rollError"></small>
+            </label>
+          </div>
+
+          <!-- EMAIL ADDRESS -->
+          <label class="field">
+            <span>College Email Address *</span>
+            <div class="input-wrap">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 6.75A1.75 1.75 0 0 1 5.75 5h12.5A1.75 1.75 0 0 1 20 6.75v10.5A1.75 1.75 0 0 1 18.25 19H5.75A1.75 1.75 0 0 1 4 17.25V6.75Z" />
+                <path d="m5 7 7 5 7-5" />
+              </svg>
+              <input id="regEmail" type="email" placeholder="student.name@college.edu" required />
+            </div>
+            <small class="field-error" id="emailError"></small>
+          </label>
+
+          <!-- SEMESTER & PROGRAM -->
+          <div class="form-grid-2">
+            <label class="field">
+              <span>Current Semester *</span>
+              <div class="input-wrap">
+                <select id="regSemester" class="reg-select">
+                  <option value="1">Semester 1</option>
+                  <option value="2">Semester 2</option>
+                  <option value="3">Semester 3</option>
+                  <option value="4" selected>Semester 4</option>
+                  <option value="5">Semester 5</option>
+                  <option value="6">Semester 6</option>
+                  <option value="7">Semester 7</option>
+                  <option value="8">Semester 8</option>
+                </select>
+              </div>
+            </label>
+
+            <label class="field">
+              <span>Program / Course *</span>
+              <div class="input-wrap">
+                <input id="regCourse" type="text" placeholder="e.g. Computer Science" value="Computer Science & Engineering" />
+              </div>
+            </label>
+          </div>
+
+          <!-- PASSWORD & CONFIRM PASSWORD -->
+          <div class="form-grid-2">
+            <label class="field">
+              <span>Password *</span>
+              <div class="input-wrap">
+                <input id="regPassword" type="password" placeholder="Min 6 characters" required />
+              </div>
+              <small class="field-error" id="passwordError"></small>
+            </label>
+
+            <label class="field">
+              <span>Confirm Password *</span>
+              <div class="input-wrap">
+                <input id="regConfirmPassword" type="password" placeholder="Confirm password" required />
+              </div>
+              <small class="field-error" id="confirmError"></small>
+            </label>
+          </div>
+
+          <!-- SUBMIT BUTTON -->
+          <button class="primary-btn" type="submit" id="registerButton" style="margin-top: 14px;">
+            <span class="btn-label">Create Student Account</span>
+            <span class="btn-spinner" aria-hidden="true"></span>
+          </button>
+
+          <!-- STATUS FEEDBACK -->
+          <div class="form-status" id="regStatus" role="status" aria-live="polite"></div>
+
+        </form>
+
+        <!-- FOOTER NAVIGATION -->
+        <p class="signup" style="margin-top: 20px;">
+          Already have an account?
+          <a class="text-link" href="/student/login" id="loginLink">
+            Sign in
+          </a>
+        </p>
+
+        <div style="margin-top: 12px; text-align: center; font-size: 11px; color: rgba(210, 230, 250, 0.5);">
+          <span>Staff or faculty member?</span>
+          <a href="/staff/login" class="text-link" style="margin-left: 5px; font-weight: 600;">
+            Institutional Portal &rarr;
+          </a>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- BOTTOM STATUS -->
+    <div class="ambient-label" aria-hidden="true">
+      <span class="pulse-dot"></span>
+      <span>EDUGUARD 360 • SECURE STUDENT ONBOARDING</span>
+    </div>
+
+  </main>
+
+  <!-- LIBRARIES -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+  <script>window.THREE || document.write('<script src="./assets/three.min.js"><\/script>')</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script>window.gsap || document.write('<script src="./assets/gsap.min.js"><\/script>')</script>
+
+  <!-- Register Script -->
+  <script src="./register-script.js"></script>
+
+</body>
+</html>

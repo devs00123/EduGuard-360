@@ -37,12 +37,21 @@ const API = {
       const res = await fetch(endpoint, { ...options, headers });
       const data = await res.json();
       if (!res.ok) {
+        if (res.status === 401 && !endpoint.includes('/api/auth/')) {
+          this.setToken(null);
+          this.setUser(null);
+          if (window.App && typeof window.App.switchRole === 'function') {
+            window.App.switchRole('STUDENT');
+          }
+        }
         throw new Error(data.message || `API Request failed with status ${res.status}`);
       }
       return data;
     } catch (err) {
       console.error(`[API Error] ${endpoint}:`, err);
-      UI.toast(err.message, 'error');
+      if (!endpoint.includes('/api/auth/')) {
+        UI.toast(err.message, 'error');
+      }
       throw err;
     }
   },
@@ -79,6 +88,9 @@ const API = {
   getStudentRisk(refresh = false) {
     return this.request(`/api/students/me/risk${refresh ? '?refresh=true' : ''}`);
   },
+  getMyRiskHistory(page = 1, limit = 20) {
+    return this.request(`/api/students/me/risk-history?page=${page}&limit=${limit}`);
+  },
   getStudentSupportInsights() {
     return this.request('/api/students/me/support-insights');
   },
@@ -97,11 +109,23 @@ const API = {
   getStudentDetail(studentId) {
     return this.request(`/api/faculty/students/${studentId}`);
   },
+  getFacultyStudentRiskHistory(studentId, page = 1, limit = 20) {
+    return this.request(`/api/faculty/students/${studentId}/risk-history?page=${page}&limit=${limit}`);
+  },
+  getInterventionsSummary() {
+    return this.request('/api/faculty/interventions-summary');
+  },
   recordAttendance(data) {
     return this.request('/api/faculty/attendance', { method: 'POST', body: data });
   },
   recordMarks(data) {
     return this.request('/api/faculty/marks', { method: 'POST', body: data });
+  },
+  createAssignment(data) {
+    return this.request('/api/faculty/assignments', { method: 'POST', body: data });
+  },
+  updateAssignmentSubmission(submissionId, data) {
+    return this.request(`/api/faculty/assignments/submissions/${submissionId}`, { method: 'PATCH', body: data });
   },
 
   // Interventions
@@ -110,6 +134,11 @@ const API = {
   },
   updateIntervention(id, data) {
     return this.request(`/api/interventions/${id}`, { method: 'PATCH', body: data });
+  },
+
+  // Global Search
+  search(query, page = 1, limit = 20) {
+    return this.request(`/api/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`);
   },
 
   // Complaints

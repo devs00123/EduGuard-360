@@ -1,0 +1,1403 @@
+/* =========================================================
+   CAMPUS FIX AI
+   Premium Cinematic Desktop Login
+========================================================= */
+
+:root {
+  --bg: #07111f;
+
+  --glass: rgba(8, 18, 31, 0.56);
+  --glass-strong: rgba(8, 17, 30, 0.72);
+
+  --border: rgba(176, 211, 255, 0.18);
+  --border-strong: rgba(156, 208, 255, 0.34);
+
+  --text: #f7fbff;
+
+  --muted: rgba(231, 241, 252, 0.68);
+  --muted-2: rgba(231, 241, 252, 0.46);
+
+  --accent: #70c8ff;
+  --accent-2: #8e8fff;
+
+  --danger: #ff8f9e;
+}
+
+
+/* =========================================================
+   RESET
+========================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+
+  margin: 0;
+
+  overflow: hidden;
+
+  background: var(--bg);
+
+  color: var(--text);
+
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+
+button,
+input {
+  font: inherit;
+}
+
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+
+/* =========================================================
+   MAIN PAGE
+========================================================= */
+
+.login-page {
+  position: relative;
+
+  width: 100vw;
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: 100%;
+
+  isolation: isolate;
+
+  overflow: hidden;
+
+  background: #07111f;
+}
+
+
+/* =========================================================
+   BACKGROUND VIDEO & DEPTH LAYERS
+========================================================= */
+
+.video-container,
+.background-overlay,
+.background-glow,
+.ambient-3d-canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+
+/* Layer 0: Background Video Container with slight overscan for parallax */
+.video-container {
+  z-index: 0;
+
+  inset: -3.5%;
+  width: 107%;
+  height: 107%;
+
+  overflow: hidden;
+
+  will-change: transform;
+
+  transform: translate3d(0, 0, 0) scale(1.03);
+
+  transform-origin: center center;
+}
+
+
+.background-video {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  object-position: center center;
+
+  display: block;
+
+  pointer-events: none;
+
+  filter:
+    saturate(0.98)
+    contrast(1.02);
+}
+
+
+/* Layer 1: Subtle cinematic readability overlay */
+.background-overlay {
+  z-index: 1;
+
+  will-change: transform;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(3, 10, 20, 0.02) 0%,
+      rgba(3, 10, 20, 0.06) 36%,
+      rgba(2, 9, 18, 0.54) 75%,
+      rgba(2, 8, 16, 0.76) 100%
+    ),
+    linear-gradient(
+      0deg,
+      rgba(1, 7, 13, 0.42) 0%,
+      transparent 32%,
+      rgba(2, 7, 14, 0.1) 100%
+    );
+}
+
+
+/* Layer 2: Subtle depth glow layer */
+.background-glow {
+  z-index: 2;
+
+  will-change: transform;
+
+  background:
+    radial-gradient(
+      circle at 74% 48%,
+      rgba(89, 174, 255, 0.09),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 92% 18%,
+      rgba(108, 107, 255, 0.06),
+      transparent 26%
+    );
+
+  mix-blend-mode: screen;
+}
+
+
+/* Layer 3: Ethereal ambient 3D canvas (subtle motes that come and pass out) */
+.ambient-3d-canvas {
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   LOGIN SHELL
+========================================================= */
+
+.login-shell {
+  position: absolute;
+
+  inset: 0;
+
+  z-index: 10;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: flex-end;
+
+  padding:
+    40px
+    clamp(48px, 7vw, 110px)
+    40px
+    52vw;
+
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+
+/* =========================================================
+   LOGIN CARD
+========================================================= */
+
+.login-card {
+  width: min(440px, 100%);
+
+  padding:
+    33px
+    34px
+    28px;
+
+  border:
+    1px solid
+    var(--border);
+
+  border-radius: 28px;
+
+  background:
+
+    linear-gradient(
+      145deg,
+      rgba(18, 31, 48, 0.69),
+      rgba(6, 16, 28, 0.64)
+    );
+
+  box-shadow:
+
+    0 30px 80px rgba(0, 0, 0, 0.34),
+
+    0 0 0 1px
+      rgba(255, 255, 255, 0.025)
+      inset,
+
+    0 16px 38px
+      rgba(23, 93, 150, 0.08);
+
+  backdrop-filter:
+    blur(22px)
+    saturate(130%);
+
+  -webkit-backdrop-filter:
+    blur(22px)
+    saturate(130%);
+
+  transform:
+    translateY(0);
+
+  opacity: 1;
+}
+
+
+/* =========================================================
+   BRAND
+========================================================= */
+
+.brand {
+  display: flex;
+
+  align-items: center;
+
+  gap: 11px;
+
+  margin-bottom: 28px;
+}
+
+
+.brand-mark {
+  position: relative;
+
+  width: 30px;
+  height: 30px;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, 1fr);
+
+  grid-template-rows:
+    repeat(2, 1fr);
+
+  gap: 3px;
+
+  transform: rotate(8deg);
+}
+
+
+.brand-mark span {
+  display: block;
+
+  border-radius: 6px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(148, 216, 255, 0.98),
+      rgba(111, 126, 255, 0.88)
+    );
+
+  box-shadow:
+    0 0 18px
+    rgba(101, 187, 255, 0.25);
+}
+
+
+.brand-mark span:nth-child(2) {
+  opacity: 0.72;
+}
+
+
+.brand-mark span:nth-child(3) {
+  opacity: 0.82;
+}
+
+
+.brand-mark span:nth-child(4) {
+  opacity: 0.52;
+}
+
+
+.brand-name {
+  font-family: "Manrope", sans-serif;
+
+  font-size: 18px;
+
+  font-weight: 700;
+
+  letter-spacing: -0.03em;
+}
+
+
+.brand-name strong {
+  color: #87d5ff;
+}
+
+
+/* =========================================================
+   INTRO
+========================================================= */
+
+.intro {
+  margin-bottom: 25px;
+}
+
+
+.eyebrow {
+  margin:
+    0
+    0
+    9px;
+
+  color:
+    rgba(149, 205, 255, 0.78);
+
+  font-size: 10px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.18em;
+}
+
+
+.intro h1 {
+  margin: 0;
+
+  font-family: "Manrope", sans-serif;
+
+  font-size:
+    clamp(
+      31px,
+      3.1vw,
+      43px
+    );
+
+  line-height: 1.02;
+
+  letter-spacing: -0.052em;
+
+  font-weight: 800;
+}
+
+
+.subtext {
+  margin:
+    11px
+    0
+    0;
+
+  color: var(--muted);
+
+  font-size: 13.5px;
+
+  line-height: 1.6;
+}
+
+
+/* =========================================================
+   FORM FIELDS
+========================================================= */
+
+.field {
+  display: block;
+
+  margin-bottom: 16px;
+}
+
+
+.field > span {
+  display: block;
+
+  margin:
+    0
+    0
+    8px
+    2px;
+
+  color:
+    rgba(240, 247, 255, 0.86);
+
+  font-size: 12px;
+
+  font-weight: 600;
+}
+
+
+.input-wrap {
+  position: relative;
+}
+
+
+.input-wrap > svg {
+  position: absolute;
+
+  left: 14px;
+
+  top: 50%;
+
+  width: 18px;
+  height: 18px;
+
+  transform:
+    translateY(-50%);
+
+  fill: none;
+
+  stroke:
+    rgba(186, 220, 250, 0.59);
+
+  stroke-width: 1.7;
+
+  stroke-linecap: round;
+
+  stroke-linejoin: round;
+
+  pointer-events: none;
+
+  transition:
+    stroke 0.2s ease;
+}
+
+
+.input-wrap:focus-within > svg {
+  stroke: #9edfff;
+}
+
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+.input-wrap input {
+  width: 100%;
+
+  height: 51px;
+
+  padding:
+    0
+    46px
+    0
+    44px;
+
+  border:
+    1px solid
+    rgba(188, 216, 244, 0.13);
+
+  border-radius: 15px;
+
+  outline: none;
+
+  color: var(--text);
+
+  background:
+    rgba(3, 12, 22, 0.48);
+
+  box-shadow:
+    0 0 0 1px
+    rgba(255, 255, 255, 0.015)
+    inset;
+
+  transition:
+
+    border-color
+    0.24s ease,
+
+    box-shadow
+    0.24s ease,
+
+    background
+    0.24s ease,
+
+    transform
+    0.24s ease;
+}
+
+
+.input-wrap input::placeholder {
+  color:
+    rgba(231, 241, 252, 0.36);
+}
+
+
+.input-wrap input:focus {
+  border-color:
+    rgba(127, 202, 255, 0.55);
+
+  background:
+    rgba(4, 14, 25, 0.64);
+
+  box-shadow:
+
+    0 0 0 4px
+      rgba(91, 170, 235, 0.07),
+
+    0 0 24px
+      rgba(62, 151, 226, 0.07);
+}
+
+
+.input-wrap input.invalid {
+  border-color:
+    rgba(255, 108, 126, 0.54);
+}
+
+
+/* =========================================================
+   ERROR MESSAGE
+========================================================= */
+
+.field-error {
+  display: block;
+
+  min-height: 15px;
+
+  padding:
+    5px
+    2px
+    0;
+
+  color: var(--danger);
+
+  font-size: 10.5px;
+}
+
+
+/* =========================================================
+   PASSWORD ICON BUTTON
+========================================================= */
+
+.icon-btn {
+  position: absolute;
+
+  top: 50%;
+
+  right: 10px;
+
+  width: 34px;
+  height: 34px;
+
+  border: 0;
+
+  border-radius: 10px;
+
+  background: transparent;
+
+  color:
+    rgba(227, 239, 252, 0.55);
+
+  display: grid;
+
+  place-items: center;
+
+  transform:
+    translateY(-50%);
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+
+.icon-btn:hover {
+  background:
+    rgba(168, 209, 242, 0.08);
+
+  color: #dcefff;
+}
+
+
+.icon-btn svg {
+  width: 18px;
+  height: 18px;
+
+  fill: none;
+
+  stroke: currentColor;
+
+  stroke-width: 1.6;
+
+  stroke-linecap: round;
+
+  stroke-linejoin: round;
+}
+
+
+/* =========================================================
+   REMEMBER / FORGOT
+========================================================= */
+
+.row-between {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 16px;
+
+  margin:
+    0
+    1px
+    18px;
+}
+
+
+.remember {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  color:
+    rgba(229, 239, 250, 0.64);
+
+  font-size: 11.5px;
+
+  cursor: pointer;
+}
+
+
+.remember input {
+  position: absolute;
+
+  opacity: 0;
+
+  pointer-events: none;
+}
+
+
+.checkmark {
+  width: 15px;
+  height: 15px;
+
+  border:
+    1px solid
+    rgba(184, 214, 240, 0.25);
+
+  border-radius: 5px;
+
+  display: inline-block;
+
+  background:
+    rgba(3, 12, 22, 0.38);
+
+  position: relative;
+
+  transition:
+    all 0.18s ease;
+}
+
+
+.remember input:checked + .checkmark {
+  border-color:
+    rgba(116, 200, 255, 0.72);
+
+  background:
+    linear-gradient(
+      145deg,
+      #6fc8ff,
+      #8094ff
+    );
+
+  box-shadow:
+    0 0 14px
+    rgba(102, 194, 255, 0.16);
+}
+
+
+.remember
+  input:checked
+  + .checkmark::after {
+  content: "";
+
+  position: absolute;
+
+  left: 4px;
+
+  top: 1px;
+
+  width: 4px;
+  height: 8px;
+
+  border:
+    solid
+    #07101c;
+
+  border-width:
+    0
+    1.6px
+    1.6px
+    0;
+
+  transform:
+    rotate(45deg);
+}
+
+
+/* =========================================================
+   LINKS
+========================================================= */
+
+.text-link {
+  color:
+    rgba(149, 210, 255, 0.88);
+
+  text-decoration: none;
+}
+
+
+.text-link:hover {
+  color: #c7ecff;
+}
+
+
+/* =========================================================
+   PRIMARY BUTTON
+========================================================= */
+
+.primary-btn,
+.google-btn {
+  width: 100%;
+
+  height: 52px;
+
+  border-radius: 15px;
+
+  border:
+    1px solid transparent;
+
+  cursor: pointer;
+
+  transition:
+
+    transform
+    0.18s ease,
+
+    box-shadow
+    0.25s ease,
+
+    border-color
+    0.25s ease,
+
+    background
+    0.25s ease;
+}
+
+
+.primary-btn {
+  position: relative;
+
+  overflow: hidden;
+
+  color: #05111f;
+
+  font-weight: 800;
+
+  background:
+    linear-gradient(
+      110deg,
+      #b9e9ff 0%,
+      #72c6ff 46%,
+      #8b93ff 100%
+    );
+
+  box-shadow:
+
+    0 12px 24px
+      rgba(59, 152, 220, 0.18),
+
+    0 0 25px
+      rgba(96, 176, 255, 0.10);
+}
+
+
+.primary-btn::after {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  background:
+    linear-gradient(
+      100deg,
+      transparent 16%,
+      rgba(255, 255, 255, 0.35) 50%,
+      transparent 84%
+    );
+
+  transform:
+    translateX(-120%);
+
+  transition:
+    transform
+    0.65s ease;
+}
+
+
+.primary-btn:hover::after {
+  transform:
+    translateX(120%);
+}
+
+
+.primary-btn:hover {
+  transform:
+    translateY(-1px);
+
+  box-shadow:
+
+    0 16px 30px
+      rgba(55, 142, 210, 0.22),
+
+    0 0 32px
+      rgba(103, 190, 255, 0.13);
+}
+
+
+.primary-btn:active {
+  transform:
+    translateY(1px)
+    scale(0.995);
+}
+
+
+.btn-label,
+.btn-spinner {
+  position: relative;
+
+  z-index: 1;
+}
+
+
+.btn-spinner {
+  display: none;
+
+  width: 18px;
+  height: 18px;
+
+  border:
+    2px solid
+    rgba(5, 17, 31, 0.35);
+
+  border-top-color:
+    rgba(5, 17, 31, 0.95);
+
+  border-radius: 50%;
+
+  animation:
+    spin
+    0.75s
+    linear
+    infinite;
+
+  margin: 0 auto;
+}
+
+
+.primary-btn.loading
+  .btn-label {
+  display: none;
+}
+
+
+.primary-btn.loading
+  .btn-spinner {
+  display: block;
+}
+
+
+.primary-btn.loading,
+.google-btn.loading {
+  cursor: wait;
+
+  opacity: 0.82;
+}
+
+
+/* =========================================================
+   DIVIDER
+========================================================= */
+
+.divider {
+  display: grid;
+
+  grid-template-columns:
+    1fr
+    auto
+    1fr;
+
+  align-items: center;
+
+  gap: 10px;
+
+  margin:
+    18px
+    0;
+}
+
+
+.divider span {
+  height: 1px;
+
+  background:
+    rgba(192, 219, 243, 0.11);
+}
+
+
+.divider em {
+  color:
+    rgba(228, 239, 250, 0.37);
+
+  font-size: 9px;
+
+  font-style: normal;
+
+  letter-spacing: 0.18em;
+}
+
+
+/* =========================================================
+   GOOGLE BUTTON
+========================================================= */
+
+.google-btn {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 10px;
+
+  color:
+    rgba(245, 249, 255, 0.90);
+
+  border-color:
+    rgba(193, 221, 246, 0.15);
+
+  background:
+    rgba(8, 18, 31, 0.50);
+
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+
+.google-btn:hover {
+  transform:
+    translateY(-1px);
+
+  border-color:
+    rgba(164, 208, 243, 0.31);
+
+  background:
+    rgba(14, 28, 44, 0.72);
+
+  box-shadow:
+    0 12px 26px
+    rgba(0, 0, 0, 0.16);
+}
+
+
+.google-icon {
+  display: grid;
+
+  place-items: center;
+}
+
+
+.google-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+
+/* =========================================================
+   FORM STATUS
+========================================================= */
+
+.form-status {
+  min-height: 20px;
+
+  margin-top: 12px;
+
+  text-align: center;
+
+  font-size: 11.5px;
+
+  color:
+    rgba(211, 230, 246, 0.65);
+}
+
+
+.form-status.success {
+  color: #9df0c1;
+}
+
+
+.form-status.error {
+  color: #ff9ea9;
+}
+
+
+/* =========================================================
+   SIGN UP
+========================================================= */
+
+.signup {
+  margin:
+    21px
+    0
+    0;
+
+  text-align: center;
+
+  color:
+    rgba(223, 235, 247, 0.48);
+
+  font-size: 11.5px;
+}
+
+
+/* =========================================================
+   AMBIENT LABEL
+========================================================= */
+
+.ambient-label {
+  position: absolute;
+
+  left: 26px;
+
+  bottom: 22px;
+
+  z-index: 20;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  color:
+    rgba(227, 239, 251, 0.38);
+
+  font-size: 8.5px;
+
+  letter-spacing: 0.15em;
+
+  pointer-events: none;
+}
+
+
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: #83d2ff;
+
+  box-shadow:
+    0 0 14px
+    rgba(95, 198, 255, 0.65);
+
+  animation:
+    pulse
+    2s
+    ease-in-out
+    infinite;
+}
+
+
+/* =========================================================
+   KEYFRAMES
+========================================================= */
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.44;
+
+    transform:
+      scale(0.84);
+  }
+
+  50% {
+    opacity: 1;
+
+    transform:
+      scale(1);
+  }
+}
+
+
+/* =========================================================
+   SMALLER LAPTOP HEIGHT
+========================================================= */
+
+@media (max-height: 760px) {
+
+  .login-shell {
+    padding-top: 24px;
+    padding-bottom: 24px;
+  }
+
+  .login-card {
+    padding:
+      26px
+      30px
+      22px;
+
+    border-radius: 24px;
+  }
+
+  .brand {
+    margin-bottom: 20px;
+  }
+
+  .intro {
+    margin-bottom: 18px;
+  }
+
+  .field {
+    margin-bottom: 11px;
+  }
+
+  .row-between {
+    margin-bottom: 13px;
+  }
+
+  .signup {
+    margin-top: 16px;
+  }
+}
+
+
+/* =========================================================
+   TABLETS & MEDIUM SCREENS (1023px and down)
+========================================================= */
+
+@media (max-width: 1023px) {
+
+  .login-shell {
+    justify-content: center;
+    padding: 36px 24px 60px;
+  }
+
+  .login-card {
+    width: min(450px, 100%);
+    margin: auto 0;
+  }
+
+  /* Centered overlay gradient for single column view */
+  .background-overlay {
+    background:
+      radial-gradient(
+        circle at 50% 50%,
+        rgba(3, 10, 20, 0.65) 0%,
+        rgba(2, 9, 18, 0.55) 100%
+      ),
+      linear-gradient(
+        180deg,
+        rgba(1, 7, 13, 0.45) 0%,
+        rgba(2, 8, 16, 0.78) 100%
+      );
+  }
+
+  .ambient-label {
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 16px;
+    font-size: 8px;
+    white-space: nowrap;
+  }
+}
+
+
+/* =========================================================
+   MOBILE PHONES (640px and down)
+========================================================= */
+
+@media (max-width: 640px) {
+
+  .login-shell {
+    padding: 20px 14px 48px;
+    align-items: flex-start;
+  }
+
+  .login-card {
+    padding: 24px 18px 20px;
+    border-radius: 20px;
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    margin: auto 0;
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .brand {
+    gap: 9px;
+    margin-bottom: 18px;
+  }
+
+  .brand-mark {
+    width: 26px;
+    height: 26px;
+  }
+
+  .brand-name {
+    font-size: 16px;
+  }
+
+  .intro {
+    margin-bottom: 18px;
+  }
+
+  .eyebrow {
+    font-size: 9px;
+    margin-bottom: 6px;
+  }
+
+  .intro h1 {
+    font-size: clamp(24px, 7vw, 29px);
+  }
+
+  .subtext {
+    font-size: 12.5px;
+    line-height: 1.5;
+    margin-top: 6px;
+  }
+
+  .field {
+    margin-bottom: 12px;
+  }
+
+  .field > span {
+    font-size: 11.5px;
+    margin-bottom: 6px;
+  }
+
+  .input-wrap input {
+    height: 48px;
+    font-size: 13.5px;
+    padding: 0 42px 0 40px;
+    border-radius: 13px;
+  }
+
+  .input-wrap > svg {
+    left: 12px;
+    width: 16px;
+    height: 16px;
+  }
+
+  .icon-btn {
+    right: 8px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .icon-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .row-between {
+    margin-bottom: 14px;
+    font-size: 11px;
+  }
+
+  .primary-btn,
+  .google-btn {
+    height: 48px;
+    border-radius: 13px;
+    font-size: 13px;
+  }
+
+  .divider {
+    margin: 14px 0;
+  }
+
+  .signup {
+    margin-top: 15px;
+    font-size: 11px;
+  }
+
+  .ambient-label {
+    bottom: 10px;
+    font-size: 7.5px;
+    gap: 6px;
+  }
+}
+
+
+/* =========================================================
+   VERY SMALL SCREENS (380px and down)
+========================================================= */
+
+@media (max-width: 380px) {
+
+  .login-card {
+    padding: 20px 14px 18px;
+    border-radius: 18px;
+  }
+
+  .intro h1 {
+    font-size: 23px;
+  }
+
+  .brand-name {
+    font-size: 15px;
+  }
+}
+
+
+/* =========================================================
+   ACCESSIBILITY: REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .video-container,
+  .background-overlay,
+  .background-glow,
+  .ambient-3d-canvas,
+  .login-card {
+    transform: none !important;
+    transition: none !important;
+    will-change: auto !important;
+  }
+}

@@ -2,6 +2,8 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Student = require('../models/Student');
 const Faculty = require('../models/Faculty');
+const Course = require('../models/Course');
+const Department = require('../models/Department');
 const { logAudit } = require('../services/auditService');
 
 const generateToken = (user) => {
@@ -14,11 +16,25 @@ const generateToken = (user) => {
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role = 'STUDENT', rollNumber, courseId, semester = 1, batch = '2023-2027', departmentId } = req.body;
+    const { name, email, password, rollNumber, courseId, semester = 1, batch = '2023-2027', departmentId } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ success: false, message: 'Please provide full name, email, and password.' });
+    }
+
+    // MANDATORY SECURITY REQUIREMENT: Public registration must ALWAYS force STUDENT role.
+    // Client-side role tampering (e.g. role: 'ADMIN') is strictly ignored.
+    const role = 'STUDENT';
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'An account with this email already exists.' });
+    }
+
+    let resolvedDept = departmentId;
+    if (!resolvedDept) {
+      const defaultDept = await Department.findOne();
+      if (defaultDept) resolvedDept = defaultDept._id;
     }
 
     const user = await User.create({
@@ -26,18 +42,23 @@ exports.register = async (req, res) => {
       email,
       password,
       role,
-      department: departmentId || null
+      department: resolvedDept || null
     });
 
-    if (role === 'STUDENT') {
-      await Student.create({
-        user: user._id,
-        rollNumber: rollNumber || `STD-${Math.floor(100000 + Math.random() * 900000)}`,
-        course: courseId,
-        currentSemester: semester,
-        batch
-      });
+    let resolvedCourse = courseId;
+    if (!resolvedCourse) {
+      const defaultCourse = await Course.findOne();
+      if (defaultCourse) resolvedCourse = defaultCourse._id;
     }
+
+    const studentRoll = rollNumber || `STD-${Math.floor(100000 + Math.random() * 900000)}`;
+    await Student.create({
+      user: user._id,
+      rollNumber: studentRoll,
+      course: resolvedCourse,
+      currentSemester: parseInt(semester) || 1,
+      batch
+    });
 
     const token = generateToken(user);
 
@@ -60,6 +81,106 @@ exports.register = async (req, res) => {
         role: user.role,
         department: user.department
       }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.staffRegister = async (req, res) => {
+  try {
+    const { name, email, password, role, employeeId, departmentId } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ success: false, message: 'Please provide full name, institutional email, and password.' });
+    }
+
+    // Zero Privilege Escalation: Public creation of ADMIN is strictly forbidden
+    if (role === 'ADMIN' || !role) {
+      return res.status(403).json({
+        success: false,
+        message: 'Security Policy: Administrator accounts can only be provisioned directly by the System Dean.'
+      });
+    }
+
+    const allowedRoles = ['FACULTY', 'DEPARTMENT_STAFF', 'DEPARTMENT_HEAD'];
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid role requested. Allowed roles are: ${allowedRoles.join(', ')}.`
+      });
+    }
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'An account with this institutional email already exists.' });
+    }
+
+    let resolvedDept = departmentId;
+    if (!resolvedDept) {
+      const defaultDept = await Department.findOne();
+      if (defaultDept) resolvedDept = defaultDept._id;
+    }
+
+    // Staff registration is created in pending clearance mode (isActive: false)
+    const user = await User.create({
+      name,
+      email,
+      password,
+      role,
+      department: resolvedDept || null,
+      isActive: false
+    });
+
+    await logAudit({
+      actor: user._id,
+      action: 'STAFF_ACCESS_REQUESTED',
+      entity: 'User',
+      entityId: user._id,
+      metadata: { requestedRole: role, employeeId },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    res.status(201).json({
+      success: true,
+      message: `Institutional clearance requested for ${role.replace('_', ' ')}. Your account is pending Institutional Dean verification.`,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isActive: user.isActive
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Please provide your registered institutional email.' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (user) {
+      await logAudit({
+        actor: user._id,
+        action: 'PASSWORD_RESET_REQUESTED',
+        entity: 'User',
+        entityId: user._id,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent']
+      });
+    }
+
+    // Generic safe message prevents email enumeration
+    res.json({
+      success: true,
+      message: 'If an active account matches that email address, security password recovery instructions have been dispatched.'
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -116,6 +237,13 @@ exports.login = async (req, res) => {
 
 exports.demoLogin = async (req, res) => {
   try {
+    if (process.env.DEMO_MODE !== 'true') {
+      return res.status(403).json({
+        success: false,
+        message: 'Demo role switching is disabled in production mode. Please sign in with valid credentials.'
+      });
+    }
+
     const { role } = req.body;
     if (!role) {
       return res.status(400).json({ success: false, message: 'Role parameter required for demo login.' });

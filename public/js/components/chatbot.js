@@ -166,6 +166,12 @@ const Chatbot = {
     input.value = '';
     this.appendMessage('user', text);
 
+    // Check if user input indicates an emergency situation
+    const emergencyMatch = typeof Emergency !== 'undefined' ? Emergency.detectEmergencyIntent(text) : null;
+    if (emergencyMatch) {
+      this.appendEmergencyCard(emergencyMatch);
+    }
+
     // Show typing indicator
     const typingId = this.showTypingIndicator();
 
@@ -251,6 +257,57 @@ const Chatbot = {
     card.querySelector('#btn-cancel-complaint').addEventListener('click', () => {
       card.remove();
       this.appendMessage('bot', 'Complaint submission cancelled. Let me know if you need anything else!');
+    });
+  },
+
+  appendEmergencyCard(emergency) {
+    const container = document.getElementById('chatbot-messages');
+    if (!container) return;
+
+    const card = document.createElement('div');
+    card.className = 'chat-bubble bot emergency-chat-card';
+    card.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 0.95rem; color: #ef4444; margin-bottom: 6px;">
+        <i class="fas fa-triangle-exclamation"></i>
+        <span>${emergency.title}</span>
+      </div>
+      <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 12px;">
+        ${emergency.message}
+      </p>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        ${emergency.actions.map((act, idx) => `
+          <button class="btn btn-sm ${act.primary ? 'btn-danger' : 'btn-secondary'} emergency-action-btn-${idx}" style="${act.primary ? 'background: #ef4444; color: #fff; font-weight: 700;' : ''}">
+            ${act.is112 ? '<i class="fas fa-phone"></i> ' : act.category === 'MEDICAL' ? '<i class="fas fa-user-doctor"></i> ' : act.category === 'SECURITY' ? '<i class="fas fa-shield-halved"></i> ' : act.category === 'FIRE' ? '<i class="fas fa-fire"></i> ' : ''}${act.label}
+          </button>
+        `).join('')}
+      </div>
+    `;
+
+    container.appendChild(card);
+    container.scrollTop = container.scrollHeight;
+
+    // Bind action buttons
+    emergency.actions.forEach((act, idx) => {
+      const btn = card.querySelector(`.emergency-action-btn-${idx}`);
+      if (!btn) return;
+
+      btn.addEventListener('click', () => {
+        if (act.dismiss) {
+          card.remove();
+          this.appendMessage('bot', 'Continuing normal conversation. If an emergency arises, tap the SOS button anytime.');
+        } else if (act.is112) {
+          Emergency.promptCall('112', 'Emergency Services (112)', 'India Unified Emergency Response', '112');
+        } else if (act.category === 'MEDICAL') {
+          const doc = Emergency.getContact('MEDICAL');
+          Emergency.promptCall(doc?.phone || '+91 11-2345-6789', doc?.name || 'Dr. Ananya Sen', 'Campus Medical Officer', 'doctor');
+        } else if (act.category === 'SECURITY') {
+          const sec = Emergency.getContact('SECURITY');
+          Emergency.promptCall(sec?.phone || '+91 11-2987-6543', sec?.name || 'Campus Security Control', 'Alpha Gate Quick Response Team', 'security');
+        } else if (act.category === 'FIRE') {
+          const fire = Emergency.getContact('FIRE');
+          Emergency.promptCall(fire?.phone || '+91 11-2345-6799', fire?.name || 'Campus Fire Safety Desk', 'Block C Utility Command', 'campus_fire');
+        }
+      });
     });
   },
 

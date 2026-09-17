@@ -56,6 +56,20 @@ const studentSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  previousRiskLevel: {
+    type: String,
+    enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL', null],
+    default: null
+  },
+  previousRiskScore: {
+    type: Number,
+    default: null
+  },
+  riskTrend: {
+    type: String,
+    enum: ['INCREASED', 'DECREASED', 'UNCHANGED', 'NEW'],
+    default: 'NEW'
+  },
   lastRiskAssessment: {
     type: Date,
     default: null

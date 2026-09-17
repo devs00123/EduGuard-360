@@ -25,6 +25,32 @@ async function calculateSlaDeadline(priority) {
 }
 
 /**
+ * Computes dynamic SLA status for a complaint:
+ * 'RESOLVED' if status is RESOLVED or CLOSED
+ * 'OVERDUE' if now > slaDeadline
+ * 'DUE_SOON' if remaining time <= 4 hours and not overdue
+ * 'ON_TRACK' otherwise
+ */
+function getSlaStatus(complaint) {
+  if (!complaint) return 'ON_TRACK';
+  if (['RESOLVED', 'CLOSED'].includes(complaint.status)) {
+    return 'RESOLVED';
+  }
+  if (!complaint.slaDeadline) return 'ON_TRACK';
+  const now = new Date();
+  const deadline = new Date(complaint.slaDeadline);
+  const diffMs = deadline.getTime() - now.getTime();
+  if (diffMs < 0) {
+    return 'OVERDUE';
+  }
+  // If due within 4 hours
+  if (diffMs <= 4 * 60 * 60 * 1000) {
+    return 'DUE_SOON';
+  }
+  return 'ON_TRACK';
+}
+
+/**
  * Checks all active complaints for SLA breaches and updates status
  */
 async function checkSlaBreaches() {
@@ -48,5 +74,6 @@ async function checkSlaBreaches() {
 
 module.exports = {
   calculateSlaDeadline,
+  getSlaStatus,
   checkSlaBreaches
 };

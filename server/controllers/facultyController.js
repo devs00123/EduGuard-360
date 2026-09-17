@@ -4,12 +4,28 @@ const Subject = require('../models/Subject');
 const AttendanceRecord = require('../models/AttendanceRecord');
 const Mark = require('../models/Mark');
 const Assessment = require('../models/Assessment');
+const Assignment = require('../models/Assignment');
+const AssignmentSubmission = require('../models/AssignmentSubmission');
 const RiskAssessment = require('../models/RiskAssessment');
 const Intervention = require('../models/Intervention');
 const Complaint = require('../models/Complaint');
 const { calculateStudentRisk } = require('../services/riskEngine');
 const { sendNotification } = require('../services/socketService');
 const { logAudit } = require('../services/auditService');
+
+/**
+ * Server-side faculty subject ownership validator
+ */
+async function validateFacultySubject(user, subjectId) {
+  if (user.role === 'ADMIN') return true;
+  const faculty = await Faculty.findOne({ user: user._id });
+  if (!faculty) return false;
+  const isAssigned = faculty.assignedSubjects.some(s => s.toString() === subjectId.toString());
+  if (isAssigned) return true;
+  const subject = await Subject.findById(subjectId);
+  if (subject && subject.faculty && subject.faculty.toString() === user._id.toString()) return true;
+  return false;
+}
 
 exports.getAssignedClasses = async (req, res) => {
   try {
@@ -47,10 +63,17 @@ exports.getStudentsList = async (req, res) => {
       query.currentSemester = parseInt(semester);
     }
 
-    let students = await Student.find(query)
+    // Pagination
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const skip = (page - 1) * limit;
+
+    let studentsQuery = Student.find(query)
       .populate('user', 'name email avatar phone')
       .populate('course', 'name code')
       .sort({ currentRiskScore: -1 });
+
+    let students = await studentsQuery;
 
     if (search) {
       const sLower = search.toLowerCase();
@@ -60,8 +83,11 @@ exports.getStudentsList = async (req, res) => {
       );
     }
 
+    const total = students.length;
+    const paginated = students.slice(skip, skip + limit);
+
     // Attach latest active intervention status for each student
-    const studentIds = students.map(s => s._id);
+    const studentIds = paginated.map(s => s._id);
     const activeInterventions = await Intervention.find({
       student: { $in: studentIds },
       status: { $in: ['PLANNED', 'ACTIVE'] }
@@ -72,7 +98,7 @@ exports.getStudentsList = async (req, res) => {
       interventionMap[i.student.toString()] = i;
     });
 
-    const formatted = students.map(s => ({
+    const formatted = paginated.map(s => ({
       _id: s._id,
       name: s.user?.name,
       email: s.user?.email,
@@ -82,6 +108,9 @@ exports.getStudentsList = async (req, res) => {
       section: s.section,
       riskLevel: s.currentRiskLevel,
       riskScore: s.currentRiskScore,
+      previousRiskLevel: s.previousRiskLevel,
+      previousRiskScore: s.previousRiskScore,
+      riskTrend: s.riskTrend,
       lastAssessed: s.lastRiskAssessment,
       activeIntervention: interventionMap[s._id.toString()] || null
     }));
@@ -89,6 +118,9 @@ exports.getStudentsList = async (req, res) => {
     res.json({
       success: true,
       count: formatted.length,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit) || 1,
       students: formatted
     });
   } catch (err) {
@@ -124,6 +156,9 @@ exports.getAtRiskStudents = async (req, res) => {
       semester: s.currentSemester,
       riskLevel: s.currentRiskLevel,
       riskScore: s.currentRiskScore,
+      previousRiskLevel: s.previousRiskLevel,
+      previousRiskScore: s.previousRiskScore,
+      riskTrend: s.riskTrend,
       intervention: interventionMap[s._id.toString()] || null
     }));
 
@@ -223,6 +258,19 @@ exports.recordAttendance = async (req, res) => {
   try {
     const { studentId, subjectId, date, status, notes } = req.body;
 
+    if (!studentId || !subjectId || !date || !status) {
+      return res.status(400).json({ success: false, message: 'Missing required attendance fields.' });
+    }
+
+    // Server-side subject ownership validation
+    const isAuthorized = await validateFacultySubject(req.user, subjectId);
+    if (!isAuthorized) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden. You are not authorized to mark attendance for this subject.'
+      });
+    }
+
     const record = await AttendanceRecord.findOneAndUpdate(
       { student: studentId, subject: subjectId, date: new Date(date).setHours(0, 0, 0, 0) },
       {
@@ -237,10 +285,15 @@ exports.recordAttendance = async (req, res) => {
       { upsert: true, new: true }
     );
 
-    // Recalculate Risk
-    await calculateStudentRisk(studentId);
+    // Safe Risk Recalculation Flow (catch errors to never fail the attendance save)
+    let updatedRisk = null;
+    try {
+      updatedRisk = await calculateStudentRisk(studentId);
+    } catch (riskErr) {
+      console.error(`[FacultyController] Safe risk recalculation error for student ${studentId}:`, riskErr.message);
+    }
 
-    res.json({ success: true, record });
+    res.json({ success: true, record, updatedRisk });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -249,8 +302,23 @@ exports.recordAttendance = async (req, res) => {
 exports.recordMarks = async (req, res) => {
   try {
     const { studentId, assessmentId, subjectId, scoredMarks, remarks } = req.body;
+    if (!studentId || !assessmentId || scoredMarks === undefined) {
+      return res.status(400).json({ success: false, message: 'Missing required marks fields.' });
+    }
+
     const assessment = await Assessment.findById(assessmentId);
     if (!assessment) return res.status(404).json({ success: false, message: 'Assessment not found.' });
+
+    const targetSubject = subjectId || assessment.subject;
+
+    // Server-side subject ownership validation
+    const isAuthorized = await validateFacultySubject(req.user, targetSubject);
+    if (!isAuthorized) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden. You are not authorized to record marks for this subject.'
+      });
+    }
 
     const percentage = Math.round((scoredMarks / assessment.maxMarks) * 100);
 
@@ -259,7 +327,7 @@ exports.recordMarks = async (req, res) => {
       {
         student: studentId,
         assessment: assessmentId,
-        subject: subjectId,
+        subject: targetSubject,
         scoredMarks,
         percentage,
         remarks,
@@ -268,10 +336,190 @@ exports.recordMarks = async (req, res) => {
       { upsert: true, new: true }
     );
 
-    // Recalculate Risk
-    await calculateStudentRisk(studentId);
+    // Safe Risk Recalculation Flow
+    let updatedRisk = null;
+    try {
+      updatedRisk = await calculateStudentRisk(studentId);
+    } catch (riskErr) {
+      console.error(`[FacultyController] Safe risk recalculation error for student ${studentId}:`, riskErr.message);
+    }
 
-    res.json({ success: true, mark });
+    res.json({ success: true, mark, updatedRisk });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.createAssignment = async (req, res) => {
+  try {
+    const { subjectId, title, description, dueDate, maxScore, semester } = req.body;
+
+    if (!subjectId || !title || !dueDate) {
+      return res.status(400).json({ success: false, message: 'Subject, title, and due date are required.' });
+    }
+
+    const subject = await Subject.findById(subjectId);
+    if (!subject) return res.status(404).json({ success: false, message: 'Subject not found.' });
+
+    // Server-side ownership validation
+    const isAuthorized = await validateFacultySubject(req.user, subjectId);
+    if (!isAuthorized) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden. You are not authorized to create assignments for this subject.'
+      });
+    }
+
+    const targetSemester = semester || subject.semester;
+
+    const assignment = await Assignment.create({
+      title: title.trim(),
+      description: description || '',
+      subject: subject._id,
+      faculty: req.user._id,
+      dueDate: new Date(dueDate),
+      maxScore: maxScore || 10,
+      semester: targetSemester
+    });
+
+    // Auto-create PENDING submissions for enrolled cohort students
+    const cohortStudents = await Student.find({ currentSemester: targetSemester, course: subject.course });
+    if (cohortStudents.length > 0) {
+      const submissionDocs = cohortStudents.map(s => ({
+        assignment: assignment._id,
+        student: s._id,
+        subject: subject._id,
+        status: 'PENDING'
+      }));
+      await AssignmentSubmission.insertMany(submissionDocs, { ordered: false }).catch(() => {});
+    }
+
+    await logAudit({
+      actor: req.user._id,
+      action: 'ASSIGNMENT_CREATED',
+      entity: 'Assignment',
+      entityId: assignment._id,
+      metadata: { title, subject: subject.name, semester: targetSemester }
+    });
+
+    res.status(201).json({ success: true, assignment });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.updateAssignmentSubmission = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, score, feedback } = req.body;
+
+    const submission = await AssignmentSubmission.findById(id).populate('assignment');
+    if (!submission) {
+      return res.status(404).json({ success: false, message: 'Assignment submission record not found.' });
+    }
+
+    const subjectId = submission.subject || submission.assignment?.subject;
+
+    // Server-side ownership validation
+    const isAuthorized = await validateFacultySubject(req.user, subjectId);
+    if (!isAuthorized) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden. You are not authorized to grade assignments for this subject.'
+      });
+    }
+
+    if (status) submission.status = status;
+    if (score !== undefined) submission.score = score;
+    if (feedback !== undefined) submission.feedback = feedback;
+    if (status === 'COMPLETED' && !submission.submissionDate) {
+      submission.submissionDate = new Date();
+    }
+
+    await submission.save();
+
+    // Safe Risk Recalculation Flow
+    let updatedRisk = null;
+    try {
+      updatedRisk = await calculateStudentRisk(submission.student);
+    } catch (riskErr) {
+      console.error(`[FacultyController] Safe risk recalculation error:`, riskErr.message);
+    }
+
+    const updatedStudent = await Student.findById(submission.student, 'currentRiskScore currentRiskLevel previousRiskScore previousRiskLevel riskTrend');
+
+    res.json({
+      success: true,
+      submission,
+      updatedRisk,
+      studentSnapshot: updatedStudent
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.getInterventionsSummary = async (req, res) => {
+  try {
+    const now = new Date();
+    const next7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const query = req.user.role === 'ADMIN' ? {} : { faculty: req.user._id };
+
+    const all = await Intervention.find(query);
+    const active = all.filter(i => ['PLANNED', 'ACTIVE'].includes(i.status)).length;
+    const completed = all.filter(i => i.status === 'COMPLETED').length;
+    const upcomingFollowUps = all.filter(i =>
+      ['PLANNED', 'ACTIVE'].includes(i.status) &&
+      i.followUpDate &&
+      new Date(i.followUpDate) >= now &&
+      new Date(i.followUpDate) <= next7Days
+    ).length;
+    const overdueFollowUps = all.filter(i =>
+      ['PLANNED', 'ACTIVE'].includes(i.status) &&
+      i.followUpDate &&
+      new Date(i.followUpDate) < now
+    ).length;
+
+    res.json({
+      success: true,
+      summary: {
+        total: all.length,
+        active,
+        completed,
+        upcomingFollowUps,
+        overdueFollowUps
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.getStudentRiskHistory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const student = await Student.findById(id);
+    if (!student) return res.status(404).json({ success: false, message: 'Student not found.' });
+
+    // Pagination
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const skip = (page - 1) * limit;
+
+    const total = await RiskAssessment.countDocuments({ student: id });
+    const history = await RiskAssessment.find({ student: id })
+      .sort({ calculatedAt: 1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.json({
+      success: true,
+      studentId: id,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit) || 1,
+      history
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

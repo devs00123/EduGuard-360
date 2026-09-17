@@ -24,6 +24,11 @@ function isPortOpen(port, host = '127.0.0.1') {
 }
 
 async function startLocalMongodIfInstalled() {
+  // Never spawn local process in production environment
+  if (process.env.NODE_ENV === 'production') {
+    return false;
+  }
+
   const defaultPath = 'C:\\Program Files\\MongoDB\\Server\\8.0\\bin\\mongod.exe';
   const dataDir = path.resolve(__dirname, '../../data/db');
 
@@ -32,7 +37,7 @@ async function startLocalMongodIfInstalled() {
   }
 
   if (fs.existsSync(defaultPath)) {
-    console.log(`[Database] Starting local MongoDB instance from ${defaultPath}...`);
+    console.log(`[Database] Dev helper: Starting local MongoDB instance from ${defaultPath}...`);
     try {
       const mongodProcess = spawn(defaultPath, ['--dbpath', dataDir, '--port', '27017'], {
         detached: true,
@@ -57,27 +62,31 @@ async function startLocalMongodIfInstalled() {
 
 const connectDB = async () => {
   const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/eduguard360';
-  
-  // If trying to connect to localhost / 127.0.0.1, verify if port 27017 is open
-  if (uri.includes('127.0.0.1') || uri.includes('localhost')) {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const isAtlas = uri.startsWith('mongodb+srv://');
+  const isLocalhost = uri.includes('127.0.0.1') || uri.includes('localhost');
+
+  // Only attempt local process launch in development with localhost URI
+  if (!isProduction && !isAtlas && isLocalhost) {
     const portOpen = await isPortOpen(27017);
     if (!portOpen) {
-      console.log('[Database] Port 27017 is not open. Attempting to start local mongod...');
+      console.log('[Database] Local port 27017 is closed. Checking local dev mongod...');
       await startLocalMongodIfInstalled();
     }
   }
 
   try {
     const conn = await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 5000
+      serverSelectionTimeoutMS: 5000,
+      autoIndex: !isProduction
     });
     console.log(`[Database] MongoDB Connected: ${conn.connection.host}/${conn.connection.name}`);
     return conn;
   } catch (error) {
     console.error(`[Database] Connection Error: ${error.message}`);
-    // If it failed and local mongod might need a start
-    if (uri.includes('127.0.0.1') || uri.includes('localhost')) {
-      console.log('[Database] Retrying connection after local spawn attempt...');
+    // Fallback retry only for local dev
+    if (!isProduction && !isAtlas && isLocalhost) {
+      console.log('[Database] Retrying connection after local mongod launch attempt...');
       await startLocalMongodIfInstalled();
       try {
         const retryConn = await mongoose.connect(uri);

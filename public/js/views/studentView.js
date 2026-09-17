@@ -13,12 +13,13 @@ const StudentView = {
     `;
 
     try {
-      const [riskRes, attRes, marksRes, asgRes, insightsRes] = await Promise.all([
+      const [riskRes, attRes, marksRes, asgRes, insightsRes, historyRes] = await Promise.all([
         API.getStudentRisk(),
         API.getStudentAttendance(),
         API.getStudentMarks(),
         API.getStudentAssignments(),
-        API.getStudentSupportInsights()
+        API.getStudentSupportInsights(),
+        API.getMyRiskHistory().catch(() => ({ history: [] }))
       ]);
 
       const assessment = riskRes.assessment;
@@ -26,6 +27,7 @@ const StudentView = {
       const marksStats = marksRes;
       const asgStats = asgRes.stats;
       const insights = insightsRes;
+      const historyList = historyRes.history || [];
 
       const riskColor = assessment.riskLevel === 'LOW' ? 'var(--risk-low)'
         : assessment.riskLevel === 'MEDIUM' ? 'var(--risk-medium)'
@@ -61,11 +63,19 @@ const StudentView = {
                 <div class="risk-score-denom">/ 100</div>
               </div>
             </div>
-            <div class="risk-badge ${assessment.riskLevel}">
-              <i class="fas fa-shield-alt"></i> ${assessment.riskLevel} RISK
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 8px;">
+              <div class="risk-badge ${assessment.riskLevel}">
+                <i class="fas fa-shield-alt"></i> ${assessment.riskLevel} RISK
+              </div>
+              ${(assessment.previousRiskScore !== null && assessment.previousRiskScore !== undefined) ? `
+                <div style="font-size: 0.75rem; color: var(--text-secondary); background: var(--bg-card); padding: 3px 10px; border-radius: 9999px; border: 1px solid var(--border-color);">
+                  <i class="fas ${assessment.riskTrend === 'INCREASED' ? 'fa-arrow-up' : assessment.riskTrend === 'DECREASED' ? 'fa-arrow-down' : 'fa-minus'}" style="color: ${assessment.riskTrend === 'INCREASED' ? 'var(--risk-critical)' : assessment.riskTrend === 'DECREASED' ? 'var(--risk-low)' : 'var(--risk-medium)'};"></i>
+                  Prev: ${assessment.previousRiskLevel || 'N/A'} (${assessment.previousRiskScore}) &bull; Trend: <strong>${assessment.riskTrend}</strong>
+                </div>
+              ` : ''}
             </div>
-            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 6px;">
-              Engine: <strong>${assessment.aiMetadata?.engine || 'Explainable AI'}</strong>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">
+              Engine: <strong>${assessment.aiMetadata?.engine || 'Deterministic Mathematical'}</strong>
             </div>
           </div>
 
@@ -196,7 +206,7 @@ const StudentView = {
             </div>
           </div>
           <div style="display: flex; flex-direction: column; gap: 10px;">
-            ${assessment.recommendations.map((rec, idx) => `
+            ${assessment.recommendations.filter(rec => rec.category !== 'FACULTY_GUIDANCE' && !rec.title.toLowerCase().includes('mentor')).map((rec, idx) => `
               <div style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; display: flex; align-items: flex-start; gap: 12px;">
                 <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; flex-shrink: 0;">
                   ${idx + 1}
@@ -239,6 +249,17 @@ const StudentView = {
           </div>
         </div>
 
+        <!-- Historical Risk Progression Chart -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <div class="card-title"><i class="fas fa-chart-line" style="color: var(--primary);"></i> Academic Risk Score Progression (Historical Assessments)</div>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">${historyList.length} evaluation(s) on record</span>
+          </div>
+          <div style="height: 220px;">
+            <canvas id="studentRiskHistoryChart"></canvas>
+          </div>
+        </div>
+
         <!-- Assignments List Table -->
         <div class="card" style="margin-bottom: 24px;">
           <div class="card-header">
@@ -277,7 +298,7 @@ const StudentView = {
       `;
 
       // Render Charts
-      this.initCharts(assessment, attRes.subjectWise, marksRes.marks);
+      this.initCharts(assessment, attRes.subjectWise, marksRes.marks, historyList);
 
       // Event Listeners
       document.getElementById('btn-recalculate-risk')?.addEventListener('click', async () => {
@@ -307,7 +328,7 @@ const StudentView = {
     }
   },
 
-  initCharts(assessment, subjectWiseAtt = [], marks = []) {
+  initCharts(assessment, subjectWiseAtt = [], marks = [], history = []) {
     // 1. Semi-Doughnut Risk Gauge
     const gaugeCtx = document.getElementById('riskGaugeChart')?.getContext('2d');
     if (gaugeCtx) {
@@ -387,6 +408,50 @@ const StudentView = {
             data: marks.map(m => m.percentage),
             backgroundColor: marks.map(m => m.percentage < 50 ? '#ef4444' : '#10b981'),
             borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100,
+              grid: { color: 'rgba(255,255,255,0.05)' }
+            },
+            x: {
+              grid: { display: false }
+            }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    }
+
+    // 4. Historical Risk Progression Line Chart
+    const histCtx = document.getElementById('studentRiskHistoryChart')?.getContext('2d');
+    if (histCtx) {
+      const dataPoints = history.length > 0 ? history : [assessment];
+      new Chart(histCtx, {
+        type: 'line',
+        data: {
+          labels: dataPoints.map(h => new Date(h.calculatedAt || Date.now()).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })),
+          datasets: [{
+            label: 'Risk Score (0-100)',
+            data: dataPoints.map(h => h.riskScore),
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99, 102, 241, 0.12)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 6,
+            pointHoverRadius: 8,
+            pointBackgroundColor: dataPoints.map(h =>
+              h.riskLevel === 'CRITICAL' ? '#ef4444' :
+              h.riskLevel === 'HIGH' ? '#f97316' :
+              h.riskLevel === 'MEDIUM' ? '#f59e0b' : '#10b981'
+            )
           }]
         },
         options: {

@@ -190,13 +190,18 @@ const ComplaintsView = {
     }
 
     return complaints.map(c => {
-      // Calculate SLA countdown
-      const deadline = new Date(c.slaDeadline).getTime();
-      const now = Date.now();
-      const diffHrs = Math.round((deadline - now) / (1000 * 60 * 60));
-      const slaBadge = c.isSlaBreached || diffHrs <= 0
-        ? `<span style="color: var(--risk-critical); font-weight: 700;"><i class="fas fa-triangle-exclamation"></i> Overdue</span>`
-        : `<span style="color: var(--risk-low); font-weight: 600;"><i class="fas fa-clock"></i> ~${diffHrs}h left</span>`;
+      // Dynamic SLA Status Badge
+      const slaStatus = c.slaStatus || (c.isSlaBreached ? 'OVERDUE' : 'ON_TRACK');
+      let slaBadge = '';
+      if (slaStatus === 'RESOLVED') {
+        slaBadge = `<span class="badge badge-low" style="font-size: 0.72rem; padding: 2px 8px;"><i class="fas fa-check-circle"></i> RESOLVED</span>`;
+      } else if (slaStatus === 'OVERDUE') {
+        slaBadge = `<span class="badge badge-critical" style="font-size: 0.72rem; padding: 2px 8px;"><i class="fas fa-triangle-exclamation"></i> OVERDUE</span>`;
+      } else if (slaStatus === 'DUE_SOON') {
+        slaBadge = `<span class="badge badge-high" style="font-size: 0.72rem; padding: 2px 8px;"><i class="fas fa-hourglass-half"></i> DUE SOON</span>`;
+      } else {
+        slaBadge = `<span class="badge badge-low" style="font-size: 0.72rem; padding: 2px 8px;"><i class="fas fa-clock"></i> ON TRACK</span>`;
+      }
 
       return `
         <tr>
@@ -325,16 +330,21 @@ const ComplaintsView = {
         App.renderCurrentView();
       });
 
-      document.getElementById('btn-resolve-issue')?.addEventListener('click', async () => {
-        const notes = prompt('Enter resolution summary / proof notes:', 'Repaired and tested hardware functionality on site.');
-        if (notes) {
-          const form = new FormData();
-          form.append('notes', notes);
-          await API.resolveComplaint(c._id, form);
-          UI.toast('Complaint marked RESOLVED! Student notified for confirmation.', 'success');
-          UI.closeModal();
-          App.renderCurrentView();
-        }
+      document.getElementById('btn-resolve-issue')?.addEventListener('click', () => {
+        UI.promptModal({
+          title: `Resolve Incident: ${c.ticketId}`,
+          message: 'Provide resolution details / maintenance proof notes for the student:',
+          defaultValue: 'Repaired and tested hardware functionality on site.',
+          confirmText: 'Mark Resolved',
+          onConfirm: async (notes) => {
+            const form = new FormData();
+            form.append('notes', notes);
+            await API.resolveComplaint(c._id, form);
+            UI.toast('Complaint marked RESOLVED! Student notified for confirmation.', 'success');
+            UI.closeModal();
+            App.renderCurrentView();
+          }
+        });
       });
 
       document.getElementById('btn-confirm-res')?.addEventListener('click', async () => {
@@ -344,24 +354,34 @@ const ComplaintsView = {
         App.renderCurrentView();
       });
 
-      document.getElementById('btn-reopen-res')?.addEventListener('click', async () => {
-        const reason = prompt('Reason for reopening ticket:', 'Issue is still persisting.');
-        if (reason) {
-          await API.reopenComplaint(c._id, reason);
-          UI.toast('Complaint reopened and escalated to department head!', 'warning');
-          UI.closeModal();
-          App.renderCurrentView();
-        }
+      document.getElementById('btn-reopen-res')?.addEventListener('click', () => {
+        UI.promptModal({
+          title: `Reopen Incident: ${c.ticketId}`,
+          message: 'Please state the reason why the resolution is unsatisfactory:',
+          defaultValue: 'Issue is still persisting on site.',
+          confirmText: 'Reopen Ticket',
+          onConfirm: async (reason) => {
+            await API.reopenComplaint(c._id, reason);
+            UI.toast('Complaint reopened and escalated to department head!', 'warning');
+            UI.closeModal();
+            App.renderCurrentView();
+          }
+        });
       });
 
-      document.getElementById('btn-escalate-issue')?.addEventListener('click', async () => {
-        const reason = prompt('Reason for escalation:', 'Urgent academic impact reported.');
-        if (reason) {
-          await API.escalateComplaint(c._id, reason);
-          UI.toast('Complaint escalated!', 'warning');
-          UI.closeModal();
-          App.renderCurrentView();
-        }
+      document.getElementById('btn-escalate-issue')?.addEventListener('click', () => {
+        UI.promptModal({
+          title: `Escalate Incident: ${c.ticketId}`,
+          message: 'Enter justification for urgent SLA escalation to department head:',
+          defaultValue: 'Urgent academic impact reported on site.',
+          confirmText: 'Escalate Now',
+          onConfirm: async (reason) => {
+            await API.escalateComplaint(c._id, reason);
+            UI.toast('Complaint escalated!', 'warning');
+            UI.closeModal();
+            App.renderCurrentView();
+          }
+        });
       });
 
     } catch (err) {

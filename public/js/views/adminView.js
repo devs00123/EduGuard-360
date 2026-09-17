@@ -184,10 +184,53 @@ const AdminView = {
             </table>
           </div>
         </div>
+
+        <!-- Campus Emergency & Safety Contacts Configuration (Admin Mode) -->
+        <div class="card" id="admin-emergency-contacts-card" style="border-top: 3px solid #ef4444;">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <div class="card-title" style="color: #ef4444; font-size: 1.15rem; font-weight: 800;">
+                <i class="fas fa-shield-heart"></i> Campus Emergency Response &amp; Safety Contacts Configuration
+              </div>
+              <div class="card-subtitle">
+                Configure verified campus doctor, medical center, fire safety, campus security, and national ERSS 112 services for all users
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button id="btn-admin-reset-contacts" class="btn btn-secondary btn-sm" title="Restore defaults">
+                <i class="fas fa-rotate-left"></i> Reset Defaults
+              </button>
+              <button id="btn-admin-add-contact" class="btn btn-primary btn-sm" style="background: #ef4444; border-color: #ef4444;">
+                <i class="fas fa-plus"></i> Add Emergency Contact
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Contact Name</th>
+                  <th>Department / Role</th>
+                  <th>Phone Number</th>
+                  <th>Availability</th>
+                  <th>Campus Location</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="admin-emergency-contacts-tbody">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
       `;
 
-      // Render Charts
+      // Render Charts & Emergency Contacts
       AdminView.initCharts(acad.riskDistribution, campusRes.categoryStats || {});
+      AdminView.renderEmergencyContacts();
 
     } catch (err) {
       container.innerHTML = `<div class="card" style="padding: 40px; text-align: center; color: var(--risk-critical);">${err.message}</div>`;
@@ -247,5 +290,175 @@ const AdminView = {
         }
       });
     }
+  },
+
+  renderEmergencyContacts() {
+    const tbody = document.getElementById('admin-emergency-contacts-tbody');
+    if (!tbody || typeof Emergency === 'undefined') return;
+
+    const contacts = Emergency.contacts || [];
+
+    tbody.innerHTML = contacts.map(c => `
+      <tr>
+        <td>
+          <span class="emergency-admin-badge ${c.isActive ? 'active' : 'inactive'}">
+            <i class="fas ${c.icon || 'fa-phone'}"></i> ${c.badge || c.category}
+          </span>
+        </td>
+        <td><strong>${c.name}</strong></td>
+        <td>${c.role}</td>
+        <td><code style="color: #ef4444; font-weight: 700;">${c.phone}</code></td>
+        <td style="font-size: 0.8rem; color: var(--text-secondary);">${c.availability}</td>
+        <td style="font-size: 0.8rem;">${c.location}</td>
+        <td>
+          <button class="btn btn-sm ${c.isActive ? 'btn-success' : 'btn-outline'}" style="font-size: 0.72rem; padding: 2px 8px;" onclick="AdminView.toggleContactStatus('${c.id}')">
+            ${c.isActive ? '🟢 Active' : '⚪ Disabled'}
+          </button>
+        </td>
+        <td>
+          <button class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 4px 8px;" onclick="AdminView.openEditContactModal('${c.id}')">
+            <i class="fas fa-pen-to-square"></i> Edit
+          </button>
+        </td>
+      </tr>
+    `).join('');
+
+    // Bind Add button
+    document.getElementById('btn-admin-add-contact')?.addEventListener('click', () => {
+      AdminView.openEditContactModal(null);
+    });
+
+    // Bind Reset button
+    document.getElementById('btn-admin-reset-contacts')?.addEventListener('click', () => {
+      if (confirm('Reset emergency contacts to campus institutional defaults?')) {
+        Emergency.contacts = [...Emergency.defaultContacts];
+        Emergency.saveContacts();
+        AdminView.renderEmergencyContacts();
+        Emergency.renderEmergencyPanel();
+        UI.toast('Emergency contacts reset to defaults', 'success');
+      }
+    });
+  },
+
+  toggleContactStatus(id) {
+    if (typeof Emergency === 'undefined') return;
+    const contact = Emergency.contacts.find(c => c.id === id);
+    if (contact) {
+      contact.isActive = !contact.isActive;
+      Emergency.saveContacts();
+      AdminView.renderEmergencyContacts();
+      Emergency.renderEmergencyPanel();
+      UI.toast(`Contact "${contact.name}" is now ${contact.isActive ? 'Active' : 'Disabled'}`, 'info');
+    }
+  },
+
+  openEditContactModal(contactId) {
+    if (typeof Emergency === 'undefined') return;
+    const contact = contactId ? Emergency.contacts.find(c => c.id === contactId) : null;
+    const isNew = !contact;
+
+    UI.showModal({
+      title: isNew ? 'Add Campus Emergency Contact' : `Edit Contact: ${contact.name}`,
+      body: `
+        <form id="form-edit-emergency-contact" style="display: flex; flex-direction: column; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">Category *</label>
+            <select id="ec-category" class="form-control" style="background: var(--bg-card); color: var(--text-primary);">
+              <option value="MEDICAL" ${contact?.category === 'MEDICAL' ? 'selected' : ''}>Campus Doctor / Medical</option>
+              <option value="AMBULANCE" ${contact?.category === 'AMBULANCE' ? 'selected' : ''}>Campus Ambulance</option>
+              <option value="SECURITY" ${contact?.category === 'SECURITY' ? 'selected' : ''}>Campus Security / QRT</option>
+              <option value="FIRE" ${contact?.category === 'FIRE' ? 'selected' : ''}>Fire & Hazard Safety</option>
+              <option value="NATIONAL_EMERGENCY" ${contact?.category === 'NATIONAL_EMERGENCY' ? 'selected' : ''}>National Emergency (112)</option>
+              <option value="POLICE" ${contact?.category === 'POLICE' ? 'selected' : ''}>Police Assistance</option>
+              <option value="SAFETY_CELL" ${contact?.category === 'SAFETY_CELL' ? 'selected' : ''}>Student Safety Helpline</option>
+              <option value="OTHER" ${contact?.category === 'OTHER' ? 'selected' : ''}>Other Emergency Contact</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Contact Name *</label>
+            <input type="text" id="ec-name" class="form-control" value="${contact?.name || ''}" placeholder="e.g. Dr. Ananya Sen" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Department / Official Role *</label>
+            <input type="text" id="ec-role" class="form-control" value="${contact?.role || ''}" placeholder="e.g. Campus Medical Officer" required />
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="form-group">
+              <label class="form-label">Emergency Phone Number *</label>
+              <input type="text" id="ec-phone" class="form-control" value="${contact?.phone || ''}" placeholder="e.g. +91 11-2345-6789 or 112" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Availability Hours *</label>
+              <input type="text" id="ec-avail" class="form-control" value="${contact?.availability || ''}" placeholder="e.g. 24/7 or 8 AM - 8 PM" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Campus Physical Location *</label>
+            <input type="text" id="ec-loc" class="form-control" value="${contact?.location || ''}" placeholder="e.g. Health Centre, Ground Floor, Block A" required />
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+            <input type="checkbox" id="ec-active" ${contact?.isActive !== false ? 'checked' : ''} />
+            <label for="ec-active" style="font-size: 0.85rem; cursor: pointer;">Active (Visible to students & staff)</label>
+          </div>
+        </form>
+      `,
+      footer: `
+        <button class="btn btn-secondary" onclick="UI.closeModal()">Cancel</button>
+        <button class="btn btn-primary" id="btn-save-emergency-contact" style="background: #ef4444; border-color: #ef4444;">
+          ${isNew ? 'Create Contact' : 'Save Changes'}
+        </button>
+      `
+    });
+
+    document.getElementById('btn-save-emergency-contact')?.addEventListener('click', () => {
+      const name = document.getElementById('ec-name')?.value?.trim();
+      const role = document.getElementById('ec-role')?.value?.trim();
+      const phone = document.getElementById('ec-phone')?.value?.trim();
+      const avail = document.getElementById('ec-avail')?.value?.trim();
+      const loc = document.getElementById('ec-loc')?.value?.trim();
+      const cat = document.getElementById('ec-category')?.value;
+      const isActive = document.getElementById('ec-active')?.checked;
+
+      if (!name || !phone) {
+        UI.toast('Please provide contact name and phone number', 'error');
+        return;
+      }
+
+      if (isNew) {
+        const newContact = {
+          id: 'contact-' + Date.now(),
+          category: cat,
+          name,
+          role,
+          phone,
+          availability: avail || '24/7',
+          location: loc || 'Campus Facility',
+          isActive: isActive !== false,
+          badge: cat.replace('_', ' '),
+          icon: cat === 'MEDICAL' ? 'fa-user-doctor' : cat === 'FIRE' ? 'fa-fire' : cat === 'SECURITY' ? 'fa-shield-dog' : 'fa-phone'
+        };
+        Emergency.contacts.push(newContact);
+      } else {
+        contact.name = name;
+        contact.role = role;
+        contact.phone = phone;
+        contact.availability = avail;
+        contact.location = loc;
+        contact.category = cat;
+        contact.isActive = isActive;
+        contact.badge = cat.replace('_', ' ');
+      }
+
+      Emergency.saveContacts();
+      AdminView.renderEmergencyContacts();
+      Emergency.renderEmergencyPanel();
+      UI.toast(`Emergency contact ${name} saved successfully`, 'success');
+      UI.closeModal();
+    });
   }
 };

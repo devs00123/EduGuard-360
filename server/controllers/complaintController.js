@@ -4,13 +4,20 @@ const ComplaintCategory = require('../models/ComplaintCategory');
 const Department = require('../models/Department');
 const User = require('../models/User');
 const { analyzeComplaint, checkAndClusterDuplicates } = require('../services/complaintAI');
-const { calculateSlaDeadline } = require('../services/slaService');
+const { calculateSlaDeadline, getSlaStatus } = require('../services/slaService');
 const { sendNotification, broadcastEvent } = require('../services/socketService');
 const { logAudit } = require('../services/auditService');
 
 exports.createComplaint = async (req, res) => {
   try {
     const { title, description, categoryId, block, building, floor, room, latitude, longitude } = req.body;
+
+    if (!title || !description || !block || !room) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error: title, description, block, and room are required fields.'
+      });
+    }
 
     // Process attachments
     const attachments = [];
@@ -131,28 +138,45 @@ exports.getComplaints = async (req, res) => {
     if (department && department !== 'ALL') query.department = department;
     if (block && block !== 'ALL') query.block = block;
 
-    let complaints = await Complaint.find(query)
+    if (search) {
+      const s = search.trim();
+      query.$or = [
+        { ticketId: { $regex: s, $options: 'i' } },
+        { title: { $regex: s, $options: 'i' } },
+        { block: { $regex: s, $options: 'i' } },
+        { room: { $regex: s, $options: 'i' } }
+      ];
+    }
+
+    // Pagination (defaults: page=1, limit=20, max=100)
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const skip = (page - 1) * limit;
+
+    const total = await Complaint.countDocuments(query);
+
+    const complaints = await Complaint.find(query)
       .populate('student', 'name email')
       .populate('category', 'name code icon')
       .populate('department', 'name code')
       .populate('assignedStaff', 'name email phone')
       .populate('cluster')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
-    if (search) {
-      const s = search.toLowerCase();
-      complaints = complaints.filter(c =>
-        c.ticketId.toLowerCase().includes(s) ||
-        c.title.toLowerCase().includes(s) ||
-        c.block.toLowerCase().includes(s) ||
-        c.room.toLowerCase().includes(s)
-      );
-    }
+    const formatted = complaints.map(c => ({
+      ...c.toObject(),
+      slaStatus: getSlaStatus(c)
+    }));
 
     res.json({
       success: true,
-      count: complaints.length,
-      complaints
+      count: formatted.length,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit) || 1,
+      complaints: formatted
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -176,7 +200,13 @@ exports.getComplaintById = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Forbidden. You cannot view another student\'s ticket.' });
     }
 
-    res.json({ success: true, complaint });
+    res.json({
+      success: true,
+      complaint: {
+        ...complaint.toObject(),
+        slaStatus: getSlaStatus(complaint)
+      }
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#050d18" />
+  <title>EduGuard 360 — Institutional Clearance Request</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Admin Stylesheet -->
+  <link rel="stylesheet" href="./admin-style.css" />
+  <style>
+    .grid-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 600px) {
+      .grid-row-2 {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+    }
+    select.admin-select {
+      width: 100%;
+      height: 48px;
+      padding: 0 14px;
+      border-radius: 10px;
+      background: rgba(12, 28, 48, 0.75);
+      border: 1px solid rgba(80, 140, 220, 0.25);
+      color: #e6f1ff;
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+    }
+    select.admin-select:focus {
+      border-color: #6366f1;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="admin-page" id="adminPage">
+
+    <!-- BACKGROUND VIDEO & IMAGE FALLBACK -->
+    <div class="video-container" id="adminVideoContainer" aria-hidden="true">
+      <img
+        src="./assets/new-admin-bg.png"
+        alt="Campus Administration Architecture"
+        class="background-fallback"
+        id="adminBgFallback"
+      />
+      <video
+        class="background-video"
+        id="adminVideo"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="auto"
+        poster="./assets/new-admin-bg.png"
+      >
+        <source src="./assets/new-admin-video.mp4" type="video/mp4" />
+      </video>
+    </div>
+
+    <!-- CINEMATIC OVERLAYS -->
+    <div class="admin-overlay" id="adminOverlay" aria-hidden="true"></div>
+    <div class="admin-glow" id="adminGlow" aria-hidden="true"></div>
+
+    <!-- REGISTRATION INTERFACE -->
+    <section class="admin-shell" aria-label="EduGuard 360 Institutional Clearance Request">
+      <div class="admin-card" id="adminCard" style="max-width: 540px;">
+
+        <!-- TOP BRAND ROW -->
+        <div class="card-top-row">
+          <div class="brand-block">
+            <div class="brand-crest" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                <rect x="3" y="14" width="7" height="7" rx="1.5" />
+              </svg>
+            </div>
+            <div class="brand-meta">
+              <div class="brand-name">EduGuard <strong>360</strong></div>
+              <div class="brand-sub">Institutional Clearance Portal</div>
+            </div>
+          </div>
+
+          <div class="security-badge">
+            <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+            <span class="badge-text">ISO 27001 • DEAN AUDIT</span>
+          </div>
+        </div>
+
+        <!-- PORTAL HEADING -->
+        <div class="portal-header" style="margin-top: 14px;">
+          <h1 class="portal-title">Request Institutional Clearance</h1>
+          <p class="portal-subtitle">
+            Submit faculty or departmental staff credentials for administrative verification and system access.
+          </p>
+        </div>
+
+        <!-- REGISTRATION FORM -->
+        <form id="staffRegisterForm" novalidate>
+
+          <div class="grid-row-2">
+            <!-- FULL NAME -->
+            <div class="form-group">
+              <label for="staffName" class="form-label"><span>Full Legal Name *</span></label>
+              <div class="input-container">
+                <input type="text" id="staffName" placeholder="Dr. / Prof. Full Name" required />
+              </div>
+              <span class="field-error" id="nameError" role="alert"></span>
+            </div>
+
+            <!-- EMPLOYEE ID -->
+            <div class="form-group">
+              <label for="staffEmpId" class="form-label"><span>Employee / Faculty ID *</span></label>
+              <div class="input-container">
+                <input type="text" id="staffEmpId" placeholder="e.g. FAC-2024-019" required />
+              </div>
+              <span class="field-error" id="empIdError" role="alert"></span>
+            </div>
+          </div>
+
+          <!-- WORK EMAIL -->
+          <div class="form-group">
+            <label for="staffEmail" class="form-label"><span>Institutional Email *</span></label>
+            <div class="input-container">
+              <input type="email" id="staffEmail" placeholder="faculty.name@college.edu" required />
+            </div>
+            <span class="field-error" id="emailError" role="alert"></span>
+          </div>
+
+          <div class="grid-row-2">
+            <!-- ROLE SELECTION -->
+            <div class="form-group">
+              <label for="staffRole" class="form-label"><span>Role Requested *</span></label>
+              <div class="input-container">
+                <select id="staffRole" class="admin-select">
+                  <option value="FACULTY" selected>Faculty / Mentor</option>
+                  <option value="DEPARTMENT_STAFF">Department Operations Staff</option>
+                  <option value="DEPARTMENT_HEAD">Department Head</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- DEPARTMENT -->
+            <div class="form-group">
+              <label for="staffDept" class="form-label"><span>Department *</span></label>
+              <div class="input-container">
+                <select id="staffDept" class="admin-select">
+                  <option value="Computer Science & Engineering">Computer Science</option>
+                  <option value="Information Technology">Information Technology</option>
+                  <option value="Electronics & Communication">Electronics</option>
+                  <option value="Mechanical Engineering">Mechanical</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- PASSWORDS -->
+          <div class="grid-row-2">
+            <div class="form-group">
+              <label for="staffPassword" class="form-label"><span>Security Password *</span></label>
+              <div class="input-container">
+                <input type="password" id="staffPassword" placeholder="Min 6 characters" required />
+              </div>
+              <span class="field-error" id="passwordError" role="alert"></span>
+            </div>
+
+            <div class="form-group">
+              <label for="staffConfirmPassword" class="form-label"><span>Confirm Password *</span></label>
+              <div class="input-container">
+                <input type="password" id="staffConfirmPassword" placeholder="Repeat password" required />
+              </div>
+              <span class="field-error" id="confirmError" role="alert"></span>
+            </div>
+          </div>
+
+          <!-- SECURITY NOTICE -->
+          <div style="font-size: 0.72rem; color: rgba(210, 230, 250, 0.6); margin: 6px 0 14px; background: rgba(99, 102, 241, 0.08); border-left: 3px solid #6366f1; padding: 8px 12px; border-radius: 4px;">
+            🔒 <em>Administrator accounts can only be provisioned directly by the System Dean. Submitted clearance requests require administrative approval before portal access is unlocked.</em>
+          </div>
+
+          <!-- SUBMIT BUTTON -->
+          <button type="submit" class="submit-btn" id="staffSubmitBtn">
+            <span class="btn-text" id="staffSubmitText">Submit Clearance Request</span>
+            <span class="btn-loader" aria-hidden="true"></span>
+          </button>
+
+          <!-- STATUS FEEDBACK -->
+          <div class="form-feedback" id="staffFormFeedback" role="status" aria-live="polite"></div>
+
+        </form>
+
+        <!-- FOOTER ROW -->
+        <div class="card-footer-row">
+          <div class="security-pill">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="notice-icon" aria-hidden="true">
+              <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <span>Dean Verification Required</span>
+          </div>
+
+          <div class="portal-switch-compact">
+            <a href="/staff/login" class="portal-link">&larr; Back to Staff Login</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- AMBIENT INSTITUTIONAL STATUS -->
+    <div class="admin-status-bar" aria-hidden="true">
+      <span class="status-indicator"></span>
+      <span>EDUGUARD 360 • CLEARANCE REQUEST DISPATCH • v2.4.0</span>
+    </div>
+
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script>window.gsap || document.write('<script src="./assets/gsap.min.js"><\/script>')</script>
+
+  <script>
+    (() => {
+      const form = document.getElementById('staffRegisterForm');
+      const nameInput = document.getElementById('staffName');
+      const empIdInput = document.getElementById('staffEmpId');
+      const emailInput = document.getElementById('staffEmail');
+      const roleSelect = document.getElementById('staffRole');
+      const passInput = document.getElementById('staffPassword');
+      const confirmInput = document.getElementById('staffConfirmPassword');
+      const submitBtn = document.getElementById('staffSubmitBtn');
+      const feedback = document.getElementById('staffFormFeedback');
+
+      const video = document.getElementById('adminVideo');
+      if (video) {
+        video.muted = true;
+        video.play().catch(() => {});
+      }
+
+      function setFeedback(msg, type = '') {
+        if (feedback) {
+          feedback.textContent = msg;
+          feedback.className = `form-feedback ${type}`.trim();
+        }
+      }
+
+      if (form) {
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          setFeedback('');
+
+          const name = nameInput.value.trim();
+          const email = emailInput.value.trim();
+          const empId = empIdInput.value.trim();
+          const role = roleSelect.value;
+          const password = passInput.value;
+          const confirmPass = confirmInput.value;
+
+          if (!name || !email || !empId || !password) {
+            setFeedback('Please fill in all mandatory fields.', 'error');
+            return;
+          }
+
+          if (password.length < 6) {
+            setFeedback('Password must be at least 6 characters.', 'error');
+            return;
+          }
+
+          if (password !== confirmPass) {
+            setFeedback('Passwords do not match.', 'error');
+            return;
+          }
+
+          submitBtn.classList.add('loading');
+          submitBtn.disabled = true;
+          setFeedback('Transmitting institutional clearance request...', 'info');
+
+          try {
+            const res = await fetch('/api/auth/staff-register', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name,
+                email,
+                password,
+                role,
+                employeeId: empId
+              })
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+              throw new Error(data.message || 'Request failed.');
+            }
+
+            setFeedback(data.message, 'success');
+            form.reset();
+
+            setTimeout(() => {
+              window.location.href = '/staff/login';
+            }, 2500);
+
+          } catch (err) {
+            setFeedback(err.message, 'error');
+          } finally {
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+          }
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

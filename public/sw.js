@@ -1,4 +1,4 @@
-const CACHE_NAME = 'eduguard360-cache-v1';
+const CACHE_NAME = 'eduguard360-cache-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -34,18 +34,36 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Pass API requests straight to network
-  if (event.request.url.includes('/api/')) {
-    return;
-  }
+  // Only handle GET requests
+  if (event.request.method !== 'GET') return;
 
+  // Pass API requests straight to network
+  if (event.request.url.includes('/api/')) return;
+
+  // Do not intercept external/CDN requests in the Service Worker
+  if (!event.request.url.startsWith(self.location.origin)) return;
+
+  // Network-First with cache fallback for HTML, JS, CSS
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      return cachedResponse || fetch(event.request).catch(() => {
-        if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
-      });
-    })
+        return networkResponse;
+      })
+      .catch(() => {
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) return cachedResponse;
+          if (event.request.mode === 'navigate') {
+            return caches.match('/index.html');
+          }
+          return new Response('Network unavailable', {
+            status: 408,
+            headers: { 'Content-Type': 'text/plain' }
+          });
+        });
+      })
   );
 });

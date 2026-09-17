@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EduGuard 360 — Institutional Gateway Portal</title>
+  <meta name="description" content="EduGuard 360: Choose your gateway - Student Portal or Staff & Administration Portal." />
+  <meta name="theme-color" content="#07111f" />
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <style>
+    :root {
+      --bg-dark: #07111f;
+      --card-bg: rgba(13, 27, 46, 0.75);
+      --card-border: rgba(99, 102, 241, 0.22);
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: radial-gradient(circle at 50% 20%, #0d223a 0%, #050d18 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow-x: hidden;
+    }
+    .portal-container {
+      max-width: 1040px;
+      width: 100%;
+      margin: 0 auto;
+      text-align: center;
+      z-index: 10;
+    }
+    .portal-brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+    .brand-icon-box {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
+    }
+    .brand-title {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .portal-tagline {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-bottom: 40px;
+    }
+    .gateways-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+    }
+    @media (max-width: 768px) {
+      .gateways-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .gateway-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 36px 30px;
+      backdrop-filter: blur(14px);
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .gateway-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .gateway-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(99, 102, 241, 0.5);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+    }
+    .gateway-card:hover::before {
+      opacity: 1;
+    }
+    .card-header-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 14px;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: #818cf8;
+      margin-bottom: 20px;
+    }
+    .gateway-title {
+      font-size: 1.45rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .gateway-desc {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+      margin-bottom: 24px;
+      flex-grow: 1;
+    }
+    .feature-list {
+      list-style: none;
+      margin-bottom: 28px;
+    }
+    .feature-list li {
+      font-size: 0.82rem;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .feature-list li i {
+      color: #34d399;
+      font-size: 0.8rem;
+    }
+    .btn-action {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 13px 20px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.92rem;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .btn-primary-action {
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      color: white;
+      border: none;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+      margin-bottom: 12px;
+    }
+    .btn-primary-action:hover {
+      background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+      transform: translateY(-1px);
+    }
+    .btn-secondary-action {
+      background: rgba(255, 255, 255, 0.05);
+      color: #e2e8f0;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .btn-secondary-action:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
+    .footer-note {
+      margin-top: 40px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="portal-container">
+    <!-- BRAND HEADER -->
+    <div class="portal-brand">
+      <div class="brand-icon-box">
+        <i class="fas fa-graduation-cap"></i>
+      </div>
+      <div class="brand-title">EDUGUARD 360</div>
+    </div>
+    <p class="portal-tagline">
+      AI-Powered Student Success &amp; Smart Campus Support Platform &bull; Select Your Access Portal
+    </p>
+
+    <!-- GATEWAYS GRID -->
+    <div class="gateways-grid">
+
+      <!-- PORTAL 1: STUDENT SUCCESS -->
+      <div class="gateway-card">
+        <div class="card-header-icon">
+          <i class="fas fa-user-graduate"></i>
+        </div>
+        <h2 class="gateway-title">Student Portal</h2>
+        <p class="gateway-desc">
+          Continuous academic risk diagnostic, personalized intervention roadmap, attendance benchmarks, and campus facility support.
+        </p>
+
+        <ul class="feature-list">
+          <li><i class="fas fa-circle-check"></i> Real-time Deterministic Academic Risk Score</li>
+          <li><i class="fas fa-circle-check"></i> AI Personalized Gaps &amp; Milestone Plan</li>
+          <li><i class="fas fa-circle-check"></i> Campus Facility Incident Ticketing &amp; SLA</li>
+          <li><i class="fas fa-circle-check"></i> Bilingual EduGuard AI Assistant (EN &amp; Hinglish)</li>
+        </ul>
+
+        <a href="/student/login" class="btn-action btn-primary-action">
+          <i class="fas fa-arrow-right-to-bracket"></i> Student Sign In
+        </a>
+        <a href="/student/register" class="btn-action btn-secondary-action">
+          <i class="fas fa-user-plus"></i> New Student Registration
+        </a>
+      </div>
+
+      <!-- PORTAL 2: STAFF & ADMINISTRATION -->
+      <div class="gateway-card">
+        <div class="card-header-icon" style="color: #a855f7; background: rgba(168, 85, 247, 0.12); border-color: rgba(168, 85, 247, 0.25);">
+          <i class="fas fa-shield-halved"></i>
+        </div>
+        <h2 class="gateway-title">Staff &amp; Administration Portal</h2>
+        <p class="gateway-desc">
+          Authorized console for Faculty Mentors, Departmental Field Technicians, Department Chairs, and Executive System Administrators.
+        </p>
+
+        <ul class="feature-list">
+          <li><i class="fas fa-circle-check"></i> Faculty Student Cohort Early Mentoring</li>
+          <li><i class="fas fa-circle-check"></i> Department Complaint Assignment &amp; Resolution</li>
+          <li><i class="fas fa-circle-check"></i> Automated SLA Dynamic Tracking &amp; Escalations</li>
+          <li><i class="fas fa-circle-check"></i> Institutional Executive Analytics &amp; Auditing</li>
+        </ul>
+
+        <a href="/staff/login" class="btn-action btn-primary-action" style="background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);">
+          <i class="fas fa-key"></i> Staff &amp; Faculty Sign In
+        </a>
+        <a href="/staff/register" class="btn-action btn-secondary-action">
+          <i class="fas fa-id-card"></i> Request Institutional Clearance
+        </a>
+      </div>
+
+    </div>
+
+    <div class="footer-note">
+      <span><i class="fas fa-shield"></i> ISO 27001 Security Hardened</span>
+      <span>&bull;</span>
+      <span><i class="fas fa-lock"></i> Strict Role-Based Access Control</span>
+      <span>&bull;</span>
+      <span><i class="fas fa-code"></i> EduGuard 360 Production v2.4</span>
+    </div>
+  </div>
+
+</body>
+</html>

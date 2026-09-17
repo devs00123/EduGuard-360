@@ -19,6 +19,20 @@ const riskAssessmentSchema = new mongoose.Schema({
     min: 0,
     max: 100
   },
+  previousRiskScore: {
+    type: Number,
+    default: null
+  },
+  previousRiskLevel: {
+    type: String,
+    enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL', null],
+    default: null
+  },
+  riskTrend: {
+    type: String,
+    enum: ['INCREASED', 'DECREASED', 'UNCHANGED', 'NEW'],
+    default: 'NEW'
+  },
   metrics: {
     attendancePercentage: {
       type: Number,

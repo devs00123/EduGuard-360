@@ -19,30 +19,8 @@
 </head>
 <body>
 
-  <!-- Hackathon Evaluator Quick Role Switcher Bar -->
-  <header class="demo-role-bar" aria-label="Demo Role Selector">
-    <div style="display: flex; align-items: center; gap: 8px;">
-      <i class="fas fa-bolt" style="color: #fbbf24;"></i>
-      <strong>EVALUATOR QUICK ROLE SWITCHER:</strong>
-    </div>
-    <div class="demo-role-pills">
-      <button class="demo-pill active" data-role="STUDENT" title="Switch to Rahul Sharma (High Risk Demo Student)">
-        <i class="fas fa-user-graduate"></i> Student (Rahul - High Risk)
-      </button>
-      <button class="demo-pill" data-role="FACULTY" title="Switch to Dr. Ramesh Kumar (CS Faculty Mentor)">
-        <i class="fas fa-chalkboard-teacher"></i> Faculty (Dr. Ramesh)
-      </button>
-      <button class="demo-pill" data-role="DEPARTMENT_STAFF" title="Switch to Suresh Patel (IT Field Tech)">
-        <i class="fas fa-wrench"></i> Dept Staff (Suresh - IT)
-      </button>
-      <button class="demo-pill" data-role="DEPARTMENT_HEAD" title="Switch to Priya Nair (IT Head)">
-        <i class="fas fa-building-user"></i> Dept Head (Priya - IT)
-      </button>
-      <button class="demo-pill" data-role="ADMIN" title="Switch to System Dean / Administrator">
-        <i class="fas fa-shield-halved"></i> Admin (Dean)
-      </button>
-    </div>
-  </header>
+
+
 
   <!-- Application Shell -->
   <div class="app-shell">
@@ -58,24 +36,15 @@
         </div>
       </div>
 
-      <nav class="sidebar-nav">
+      <nav id="sidebar-nav" class="sidebar-nav">
         <div class="nav-section-title">Core Modules</div>
         <a class="nav-item active" data-view="student" href="#student">
           <i class="fas fa-chart-pie"></i>
           <span>Student Academic Risk</span>
         </a>
-        <a class="nav-item" data-view="faculty" href="#faculty">
-          <i class="fas fa-user-doctor"></i>
-          <span>Faculty Mentorship</span>
-          <span class="nav-badge" style="background: var(--risk-critical);">At-Risk</span>
-        </a>
         <a class="nav-item" data-view="complaints" href="#complaints">
           <i class="fas fa-headset"></i>
           <span>Campus Complaints</span>
-        </a>
-        <a class="nav-item" data-view="admin" href="#admin">
-          <i class="fas fa-sliders"></i>
-          <span>Executive Analytics</span>
         </a>
 
         <div class="nav-section-title">Smart Features</div>
@@ -87,15 +56,23 @@
           <i class="fas fa-bullhorn"></i>
           <span>Report Facility Issue</span>
         </a>
+        <a class="nav-item nav-item-sos" onclick="Emergency.open(); return false;" href="#" style="color: #ef4444;">
+          <i class="fas fa-shield-heart" style="color: #ef4444;"></i>
+          <span>Emergency Help (SOS)</span>
+          <span class="nav-badge" style="background: #ef4444; color: #fff;">112</span>
+        </a>
       </nav>
 
       <!-- Active User Profile Box -->
-      <div class="sidebar-user">
+      <div class="sidebar-user" style="display: flex; align-items: center;">
         <div id="current-user-avatar" class="user-avatar">R</div>
-        <div class="user-info">
+        <div class="user-info" style="flex-grow: 1;">
           <div id="current-user-name" class="user-name">Rahul Sharma</div>
           <div id="current-user-role" class="user-role-badge">STUDENT</div>
         </div>
+        <button id="sidebar-logout-btn" class="icon-btn" title="Sign Out" aria-label="Sign out" style="color: var(--text-muted); background: none; border: none; cursor: pointer; padding: 6px;">
+          <i class="fas fa-arrow-right-from-bracket"></i>
+        </button>
       </div>
     </aside>
 
@@ -107,12 +84,36 @@
           <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="Toggle navigation menu">
             <i class="fas fa-bars"></i>
           </button>
-          <div id="topbar-view-title" class="view-title">
-            Student Academic & Campus Portal
+          <div class="topbar-title-wrapper">
+            <div class="topbar-breadcrumb">
+              <span class="topbar-breadcrumb-item"><i class="fas fa-shield-halved"></i> EduGuard</span>
+              <span class="topbar-breadcrumb-separator">/</span>
+            </div>
+            <h2 id="topbar-view-title" class="view-title">
+              Student Academic & Campus Portal
+            </h2>
           </div>
         </div>
 
+        <!-- Global Role-Filtered Quick Search -->
+        <div class="topbar-search-wrapper">
+          <div class="topbar-search-box">
+            <i class="fas fa-search topbar-search-icon"></i>
+            <input type="text" id="global-search-input" class="topbar-search-input" placeholder="Search complaints, subjects, students..." autocomplete="off">
+            <kbd class="topbar-search-kbd">⌘K</kbd>
+          </div>
+          <div id="global-search-dropdown" class="search-dropdown"></div>
+        </div>
+
         <div class="topbar-right">
+          <!-- Atlas Live Cloud Connection Indicator -->
+          <div class="topbar-status-badge" title="Live Database: Connected to MongoDB Atlas Cloud">
+            <span class="status-pulse-dot"></span>
+            <span class="status-text">Atlas Live</span>
+          </div>
+
+          <div class="topbar-divider"></div>
+
           <!-- Real-Time Notification Bell Button -->
           <button id="notif-toggle-btn" class="icon-btn" title="View Notifications" aria-label="Notifications">
             <i class="fas fa-bell"></i>
@@ -122,6 +123,22 @@
           <!-- Theme Toggle (Dark / Light) -->
           <button id="theme-toggle-btn" class="icon-btn" title="Toggle Dark / Light Theme" aria-label="Theme toggle">
             <i class="fas fa-sun"></i>
+          </button>
+
+          <div class="topbar-divider"></div>
+
+          <!-- Quick User Profile Chip in Topbar -->
+          <div class="topbar-user-pill" id="topbar-user-pill" title="Active Session">
+            <div id="topbar-user-avatar" class="topbar-avatar">R</div>
+            <div class="topbar-user-info">
+              <span id="topbar-user-name" class="topbar-name">Rahul Sharma</span>
+              <span id="topbar-user-role" class="topbar-role">STUDENT</span>
+            </div>
+          </div>
+
+          <!-- Sign Out Action -->
+          <button id="topbar-logout-btn" class="icon-btn icon-btn-danger" title="Sign Out" aria-label="Sign out">
+            <i class="fas fa-arrow-right-from-bracket"></i>
           </button>
         </div>
       </div>
@@ -159,6 +176,7 @@
   <!-- Application Modules -->
   <script src="/js/api.js"></script>
   <script src="/js/socket.js"></script>
+  <script src="/js/components/emergency.js"></script>
   <script src="/js/components/chatbot.js"></script>
   <script src="/js/views/studentView.js"></script>
   <script src="/js/views/facultyView.js"></script>

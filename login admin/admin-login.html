@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#050d18" />
+  <title>EduGuard 360 — Institutional &amp; Staff Portal</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Admin Stylesheet -->
+  <link rel="stylesheet" href="./admin-style.css" />
+</head>
+
+<body>
+
+  <main class="admin-page" id="adminPage">
+
+    <!-- =========================================
+         LAYER 0: BACKGROUND VIDEO & IMAGE FALLBACK
+    ========================================== -->
+    <div class="video-container" id="adminVideoContainer" aria-hidden="true">
+      <img
+        src="./assets/new-admin-bg.png"
+        alt="Campus Administration Architecture"
+        class="background-fallback"
+        id="adminBgFallback"
+      />
+      <video
+        class="background-video"
+        id="adminVideo"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="auto"
+        poster="./assets/new-admin-bg.png"
+      >
+        <source src="./assets/new-admin-video.mp4" type="video/mp4" />
+      </video>
+    </div>
+
+    <!-- =========================================
+         LAYER 1 & 2: CINEMATIC OVERLAYS
+    ========================================== -->
+    <div class="admin-overlay" id="adminOverlay" aria-hidden="true"></div>
+    <div class="admin-glow" id="adminGlow" aria-hidden="true"></div>
+
+    <!-- =========================================
+         LAYER 10: ADMIN & TEACHER LOGIN INTERFACE
+    ========================================== -->
+    <section class="admin-shell" aria-label="EduGuard 360 Institutional Access">
+
+      <div class="admin-card" id="adminCard">
+
+        <!-- TOP BRAND & CLEARANCE ROW -->
+        <div class="card-top-row">
+          <div class="brand-block">
+            <div class="brand-crest" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                <rect x="3" y="14" width="7" height="7" rx="1.5" />
+              </svg>
+            </div>
+            <div class="brand-meta">
+              <div class="brand-name">EduGuard <strong>360</strong></div>
+              <div class="brand-sub">Staff &amp; Faculty Console</div>
+            </div>
+          </div>
+
+          <div class="security-badge">
+            <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+            <span class="badge-text" id="clearanceBadge">ISO 27001 • SSO</span>
+          </div>
+        </div>
+
+        <!-- ROLE SELECTOR -->
+        <div class="role-selector" role="tablist" aria-label="Select access role">
+          <button
+            type="button"
+            class="role-tab active"
+            id="roleAdmin"
+            role="tab"
+            aria-selected="true"
+            data-role="admin"
+          >
+            <svg class="role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
+            </svg>
+            <span>Administrator</span>
+          </button>
+
+          <button
+            type="button"
+            class="role-tab"
+            id="roleTeacher"
+            role="tab"
+            aria-selected="false"
+            data-role="teacher"
+          >
+            <svg class="role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+            <span>Teacher</span>
+          </button>
+        </div>
+
+        <!-- PORTAL HEADING -->
+        <div class="portal-header">
+          <h1 class="portal-title" id="portalTitle">Administrator Access</h1>
+          <p class="portal-subtitle" id="portalSubtitle">
+            Secure command center for university infrastructure, asset dispatch, and system operations.
+          </p>
+        </div>
+
+        <!-- AUTHENTICATION FORM -->
+        <form id="adminLoginForm" novalidate data-current-role="admin">
+
+          <!-- EMAIL -->
+          <label class="field">
+            <span>Work / Institutional Email</span>
+            <div class="input-wrap">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 6.75A1.75 1.75 0 0 1 5.75 5h12.5A1.75 1.75 0 0 1 20 6.75v10.5A1.75 1.75 0 0 1 18.25 19H5.75A1.75 1.75 0 0 1 4 17.25V6.75Z"/>
+                <path d="m5 7 7 5 7-5"/>
+              </svg>
+              <input
+                id="adminEmail"
+                name="email"
+                type="email"
+                autocomplete="username"
+                placeholder="admin.id@college.edu"
+                spellcheck="false"
+                required
+              />
+            </div>
+            <small class="field-error" id="emailError" role="alert"></small>
+          </label>
+
+          <!-- PASSWORD -->
+          <label class="field">
+            <span>Security Password</span>
+            <div class="input-wrap">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="4.5" y="10" width="15" height="10" rx="2.2"/>
+                <path d="M8 10V7.5a4 4 0 0 1 8 0V10"/>
+              </svg>
+              <input
+                id="adminPassword"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                placeholder="Enter authorized credential"
+                required
+              />
+              <button
+                class="icon-btn"
+                type="button"
+                id="toggleAdminPassword"
+                aria-label="Show password"
+              >
+                <svg class="eye" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6Z"/>
+                  <circle cx="12" cy="12" r="2.5"/>
+                </svg>
+              </button>
+            </div>
+            <small class="field-error" id="passwordError" role="alert"></small>
+          </label>
+
+          <!-- REMEMBER / FORGOT -->
+          <div class="row-between">
+            <label class="remember">
+              <input type="checkbox" id="rememberDevice" />
+              <span class="checkmark" aria-hidden="true"></span>
+              <span>Remember me</span>
+            </label>
+
+            <a class="text-link" href="#" id="forgotCredentialsLink">
+              Forgot password?
+            </a>
+          </div>
+
+          <!-- LOGIN BUTTON -->
+          <button class="primary-btn submit-btn" type="submit" id="adminSubmitBtn">
+            <span class="btn-label" id="submitBtnText">Authorize &amp; Sign In</span>
+            <span class="btn-spinner btn-loader" aria-hidden="true"></span>
+          </button>
+
+          <!-- DIVIDER -->
+          <div class="divider">
+            <span></span>
+            <em>OR</em>
+            <span></span>
+          </div>
+
+          <!-- GOOGLE BUTTON -->
+          <button class="google-btn google-sso-btn" type="button" id="googleSsoBtn">
+            <span class="google-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M21.6 12.23c0-.73-.07-1.43-.21-2.1H12v3.98h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.24c1.9-1.75 2.98-4.33 2.98-7.41Z"/>
+                <path fill="#34A853" d="M12 22c2.7 0 4.97-.9 6.63-2.36l-3.24-2.51c-.9.6-2.05.96-3.39.96-2.61 0-4.83-1.76-5.62-4.13H3.03v2.59A10 10 0 0 0 12 22Z"/>
+                <path fill="#FBBC05" d="M6.38 13.96A6 6 0 0 1 6.05 12c0-.68.12-1.34.33-1.96V7.45H3.03A10 10 0 0 0 2 12c0 1.61.39 3.13 1.03 4.55l3.35-2.59Z"/>
+                <path fill="#EA4335" d="M12 5.91c1.47 0 2.79.51 3.83 1.5l2.87-2.87C16.97 2.91 14.7 2 12 2a10 10 0 0 0-8.97 5.45l3.35 2.59C7.17 7.67 9.39 5.91 12 5.91Z"/>
+              </svg>
+            </span>
+            <span id="googleBtnText">Continue with Google Workspace</span>
+          </button>
+
+          <!-- FORM STATUS NOTIFICATION -->
+          <div class="form-status form-feedback" id="formFeedback" role="status" aria-live="polite"></div>
+
+        </form>
+
+        <!-- COMPACT FOOTER ROW -->
+        <div class="card-footer-row">
+          <div class="security-pill">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="notice-icon" aria-hidden="true">
+              <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <span>Encrypted &amp; Monitored</span>
+          </div>
+
+          <div class="portal-switch-compact" style="display: flex; gap: 12px;">
+            <a href="/staff/register" class="portal-link" style="color: var(--color-accent, #6366f1);">Request Clearance &rarr;</a>
+            <a href="/student/login" class="portal-link">Student Portal &rarr;</a>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- AMBIENT INSTITUTIONAL STATUS -->
+    <div class="admin-status-bar" aria-hidden="true">
+      <span class="status-indicator"></span>
+      <span>EDUGUARD 360 • INSTITUTIONAL GATEWAY ONLINE • v2.4.0</span>
+    </div>
+
+  </main>
+
+  <!-- =========================================
+       SCRIPTS
+  ========================================== -->
+  <!-- GSAP with local fallback -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script>window.gsap || document.write('<script src="./assets/gsap.min.js"><\/script>')</script>
+
+  <!-- Admin JavaScript -->
+  <script src="./admin-script.js"></script>
+
+</body>
+</html>
+
+
+
+

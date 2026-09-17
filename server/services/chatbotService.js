@@ -250,6 +250,23 @@ async function processUserMessage({ message, userId, userRole, confirmedAction =
   const cleanMsg = message.trim();
   const lower = cleanMsg.toLowerCase();
 
+  // Handle explicit cancellation of proposed action
+  if (/^(?:no|cancel|nahi|reject|cancel complaint|mat karo)$/i.test(lower) || (confirmedAction && confirmedAction.cancelled)) {
+    return {
+      reply: 'Complaint creation cancelled. No ticket was created. How else can I assist you?',
+      intent: 'CANCEL_ACTION',
+      actionCancelled: true
+    };
+  }
+
+  // Security guard: Refuse inquiries regarding other students or private system credentials
+  if (/(?:other student|another student|rohan's|all students|admin password|system secret|database credentials|jwt secret|mongo uri)/i.test(lower)) {
+    return {
+      reply: 'For institutional privacy and security compliance, EduGuard AI cannot access or disclose other students\' records, credentials, or internal system configurations. I can only assist with your own academic profile and campus support.',
+      intent: 'UNAUTHORIZED_BLOCKED'
+    };
+  }
+
   // If client confirms an action (e.g. creating a complaint draft)
   if (confirmedAction && confirmedAction.type === 'CONFIRM_CREATE_COMPLAINT') {
     const draft = confirmedAction.draft;
@@ -378,6 +395,60 @@ async function processUserMessage({ message, userId, userRole, confirmedAction =
     return { reply, intent: 'GET_ASSIGNMENTS', data: assignments };
   }
 
+  // 4b. PERFORMANCE IMPROVEMENT / RECOMMENDATIONS (English / Hindi / Hinglish)
+  // "How can I improve my performance?", "kaise improve karu", "tips to improve", "study recommendations"
+  if (/improve|improvement|better marks|kaise improve|padhai kaise|study tips|recommendations|suggestions/i.test(lower)) {
+    const riskData = await getMyRisk(userId);
+    let reply = `Here are your personalized recommendations to boost your academic performance:\n\n`;
+    if (riskData.recommendations && riskData.recommendations.length > 0) {
+      riskData.recommendations.forEach((r, idx) => {
+        reply += `**${idx + 1}. ${r.title}** (${r.priority} Priority)\n${r.action}\n*Target: ${r.targetMetric}*\n\n`;
+      });
+    } else {
+      reply += `• Maintain consistent lecture attendance above 75%.\n• Review core textbooks and syllabus modules weekly.\n• Submit coursework assignments before deadlines.\n• Consult your faculty mentor for tailored study guidance.`;
+    }
+    return {
+      reply,
+      intent: 'GET_IMPROVEMENT_TIPS',
+      data: riskData.recommendations
+    };
+  }
+
+  // 4c. SHOW MY COMPLAINTS LIST
+  // "Show my complaints", "my complaints", "meri complaints dikhao"
+  if (/my complaints|show.*complaint|meri complaint|list.*complaint|view.*complaint/i.test(lower)) {
+    const myComplaints = await getMyComplaints(userId);
+    if (myComplaints.length === 0) {
+      return { reply: 'You currently have no submitted campus complaints. Everything is clear!' };
+    }
+    let reply = `Here are your campus support complaints:\n\n`;
+    myComplaints.slice(0, 5).forEach(c => {
+      reply += `• **${c.ticketId}**: ${c.title} [Status: **${c.status}**] (${c.location})\n`;
+    });
+    reply += `\nType "status <Ticket ID>" (e.g. status ${myComplaints[0].ticketId}) for full resolution details.`;
+    return { reply, intent: 'MY_COMPLAINTS', data: myComplaints };
+  }
+
+  // 4d. SHOW MY INTERVENTIONS LIST
+  // "Show my interventions", "my interventions", "mera intervention"
+  if (/intervention|mentorship|mentor support/i.test(lower)) {
+    const interventions = await getMyInterventions(userId);
+    if (!interventions || interventions.length === 0) {
+      return {
+        reply: 'You currently have no active faculty interventions. Keep up your regular coursework!',
+        intent: 'GET_INTERVENTIONS',
+        data: []
+      };
+    }
+    let reply = `**Your Faculty Interventions & Mentorship Support:**\n\n`;
+    interventions.forEach((i, idx) => {
+      reply += `**${idx + 1}. ${i.reason}**\n• Mentor: ${i.facultyName}\n• Status: **${i.status}**\n• Action Plan: ${i.actionPlan}\n• Follow-Up: ${i.followUpDate ? new Date(i.followUpDate).toLocaleDateString() : 'Pending schedule'}\n`;
+      if (i.notes) reply += `• Notes: ${i.notes}\n`;
+      reply += '\n';
+    });
+    return { reply, intent: 'GET_INTERVENTIONS', data: interventions };
+  }
+
   // 5. CAMPUS COMPLAINT CREATION / INTENT DETECTION (English / Hindi / Hinglish)
   // e.g. "Block B mein Wi-Fi nahi chal raha", "projector kharab hai room 204", "wifi issue", "broken tap"
   const hasComplaintIntent = /wifi|wi-fi|internet|projector|fan|light|ac|water|tap|toilet|washroom|chair|desk|socket|electricity|leak|nahi chal raha|kharab|problem|issue|toota/i.test(lower);
@@ -422,11 +493,18 @@ async function processUserMessage({ message, userId, userRole, confirmedAction =
   }
 
   // 6. COMPLAINT STATUS OR TRACKING
-  // "status of CMP-2026-1001", "mera complaint status", "complaints track"
-  const ticketMatch = cleanMsg.match(/CMP-\d{4}-\d{4}/i);
-  if (ticketMatch || /complaint.*status|status.*complaint|mera complaint/i.test(lower)) {
+  // "status of EDU-123456", "status of CMP-2026-1001", "mera complaint status"
+  const ticketMatch = cleanMsg.match(/(?:EDU-[A-Za-z0-9-]+|CMP-[A-Za-z0-9-]+)/i);
+  if (ticketMatch || /complaint.*status|status.*complaint/i.test(lower)) {
     if (ticketMatch) {
       const statusData = await getComplaintStatus(ticketMatch[0], userId);
+      if (!statusData || statusData.text) {
+        return {
+          reply: statusData?.text || `Could not find any ticket with ID ${ticketMatch[0]}. Please check the ticket number.`,
+          intent: 'COMPLAINT_STATUS',
+          data: null
+        };
+      }
       let reply = `**Ticket ${statusData.ticketId}** Details:\n\n` +
         `• Title: ${statusData.title}\n` +
         `• Status: **${statusData.status}**\n` +

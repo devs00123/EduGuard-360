@@ -6,6 +6,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
+const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 require('./models');
 const { initSocket } = require('./services/socketService');
@@ -21,6 +22,8 @@ const aiRoutes = require('./routes/aiRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const searchRoutes = require('./routes/searchRoutes');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const server = http.createServer(app);
@@ -39,10 +42,22 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+      scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com", "data:"],
       imgSrc: ["'self'", "data:", "blob:", "http://localhost:*", "http://127.0.0.1:*"],
-      connectSrc: ["'self'", "ws:", "wss:", "http://localhost:*", "http://127.0.0.1:*"]
+      mediaSrc: ["'self'", "data:", "blob:"],
+      connectSrc: [
+        "'self'",
+        "ws:",
+        "wss:",
+        "http://localhost:*",
+        "http://127.0.0.1:*",
+        "https://fonts.googleapis.com",
+        "https://fonts.gstatic.com",
+        "https://cdnjs.cloudflare.com",
+        "https://cdn.jsdelivr.net"
+      ]
     }
   },
   crossOriginEmbedderPolicy: false
@@ -64,29 +79,114 @@ const apiLimiter = rateLimit({
   max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: 'Too many requests from this IP, please try again later.' }
+  message: { success: false, message: 'Too many requests, please try again later.' }
 });
 app.use('/api', apiLimiter);
 
+// Specific Rate Limiters for sensitive/high-cost endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'development' ? 500 : 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === 'test',
+  message: { success: false, message: 'Too many authentication attempts, please try again after 15 minutes.' }
+});
+
+const aiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 40, // 40 AI queries per min
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'AI query rate limit exceeded, please wait a moment.' }
+});
+
+const complaintLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 30, // 30 complaints per min
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Complaint submission limit exceeded, please try again shortly.' }
+});
+
+const searchLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 100, // 100 queries per min
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Search rate limit exceeded.' }
+});
+
 // Static Asset Directories
+app.use('/student', express.static(path.resolve(__dirname, '../login user')));
+app.use('/staff', express.static(path.resolve(__dirname, '../login admin')));
 app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
 app.use(express.static(path.resolve(__dirname, '../public')));
 
+// Authentication Portals & Direct Routes
+app.get('/student/login', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../login user/index.html'));
+});
+app.get('/student/register', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../login user/register.html'));
+});
+app.get('/staff/login', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../login admin/admin-login.html'));
+});
+app.get('/staff/register', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../login admin/admin-register.html'));
+});
+app.get('/portal', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../public/portal.html'));
+});
+app.get(['/student/dashboard', '/faculty/dashboard', '/staff/dashboard', '/department-head/dashboard', '/admin/dashboard'], (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../public/index.html'));
+});
+
 // API Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/faculty', facultyRoutes);
 app.use('/api/interventions', interventionRoutes);
-app.use('/api/complaints', complaintRoutes);
-app.use('/api/ai', aiRoutes);
+app.use('/api/complaints', complaintLimiter, complaintRoutes);
+app.use('/api/ai', aiLimiter, aiRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/search', searchLimiter, searchRoutes);
 
-// Health check endpoint
+// Health check endpoint (Secured for production)
 app.get('/api/health', (req, res) => {
+  const isConnected = mongoose.connection.readyState === 1;
+  const isDev = process.env.NODE_ENV === 'development';
+
+  // Check if caller provides admin auth token
+  let isAdmin = false;
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const decoded = jwt.verify(
+        authHeader.split(' ')[1],
+        process.env.JWT_SECRET || 'eduguard360_super_secret_jwt_key_hackathon_2026_secure'
+      );
+      if (decoded && decoded.role === 'ADMIN') isAdmin = true;
+    } catch (_) {}
+  }
+
+  // In production, public health check returns only safe minimal status
+  if (!isDev && !isAdmin) {
+    return res.json({
+      status: isConnected ? 'ok' : 'degraded',
+      database: isConnected ? 'connected' : 'disconnected'
+    });
+  }
+
+  // Detailed diagnostics for development or authenticated administrators only
   res.json({
-    status: 'online',
+    status: isConnected ? 'ok' : 'degraded',
+    database: isConnected ? 'connected' : 'disconnected',
+    environment: isDev ? 'development' : 'production',
+    demoMode: process.env.DEMO_MODE === 'true',
     platform: 'EduGuard 360',
     version: '1.0.0',
     timestamp: new Date().toISOString()

@@ -226,6 +226,9 @@ exports.getMySupportInsights = async (req, res) => {
       academicSummary: {
         riskLevel: risk.riskLevel,
         riskScore: risk.riskScore,
+        previousRiskLevel: risk.previousRiskLevel || student.previousRiskLevel || null,
+        previousRiskScore: risk.previousRiskScore !== undefined ? risk.previousRiskScore : (student.previousRiskScore || null),
+        riskTrend: risk.riskTrend || student.riskTrend || 'UNCHANGED',
         attendance: risk.metrics?.attendancePercentage,
         marksAverage: risk.metrics?.internalMarksAverage,
         pendingAssignments: risk.metrics?.pendingAssignmentsCount,
@@ -241,6 +244,34 @@ exports.getMySupportInsights = async (req, res) => {
         issues: supportContext
       },
       note: 'Campus complaint records are presented strictly as relevant support context.'
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.getMyRiskHistory = async (req, res) => {
+  try {
+    const student = await Student.findOne({ user: req.user._id });
+    if (!student) return res.status(404).json({ success: false, message: 'Student not found.' });
+
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const skip = (page - 1) * limit;
+
+    const total = await RiskAssessment.countDocuments({ student: student._id });
+    const history = await RiskAssessment.find({ student: student._id })
+      .sort({ calculatedAt: 1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.json({
+      success: true,
+      studentId: student._id,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit) || 1,
+      history
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
