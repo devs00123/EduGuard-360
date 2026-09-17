@@ -2,6 +2,8 @@
 ### AI-Powered Student Success, Smart Campus Support & Emergency Response Platform
 > *"Identify • Support • Resolve • Protect"*
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/devs00123/EduGuard-360)
+
 ---
 
 ## 🌟 Overview
