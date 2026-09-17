@@ -448,55 +448,62 @@
           <p class="google-auth-subtitle">Choose an account to continue to <span style="color: #93c5fd; font-weight: 700;">EduGuard 360</span></p>
         </div>
 
-        <!-- Account List -->
+        <!-- Account Form / Selector -->
         <div class="google-account-list">
-          <!-- Primary Account: Rahul Sharma -->
-          <button type="button" class="google-account-item" data-email="rahul@eduguard.edu" data-name="Rahul Sharma">
-            <div class="google-avatar-box" style="background: linear-gradient(135deg, #1e3a8a, #3b82f6);">
-              <span>R</span>
+          <!-- Primary: Personal Google Account Sign-In -->
+          <div style="padding: 16px; background: rgba(15, 23, 42, 0.8); border-radius: 14px; border: 1px solid rgba(147, 197, 253, 0.35); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+              <i class="fab fa-google" style="color: #4285F4; font-size: 16px;"></i>
+              <span style="font-size: 13px; color: #f8fafc; font-weight: 700;">Sign in with your Personal or Campus Google ID</span>
             </div>
-            <div class="google-account-info">
-              <div class="google-account-name">Rahul Sharma <span class="google-account-badge">Primary</span></div>
-              <div class="google-account-email">rahul@eduguard.edu</div>
-              <div class="google-account-meta">B.Tech CSE • Roll 2022CS104 • Campus Google ID</div>
-            </div>
-            <i class="fas fa-chevron-right google-account-arrow"></i>
-          </button>
-
-          <!-- Account 2: Ananya Verma -->
-          <button type="button" class="google-account-item" data-email="ananya@eduguard.edu" data-name="Ananya Verma">
-            <div class="google-avatar-box" style="background: linear-gradient(135deg, #065f46, #10b981);">
-              <span>A</span>
-            </div>
-            <div class="google-account-info">
-              <div class="google-account-name">Ananya Verma</div>
-              <div class="google-account-email">ananya@eduguard.edu</div>
-              <div class="google-account-meta">B.Tech CSE • Roll 2022CS105 • Verified Student</div>
-            </div>
-            <i class="fas fa-chevron-right google-account-arrow"></i>
-          </button>
-
-          <!-- Custom Real Google ID Section -->
-          <button type="button" class="google-account-item google-custom-toggle" id="googleCustomToggle">
-            <div class="google-avatar-box" style="background: rgba(147, 197, 253, 0.14); border: 1px dashed rgba(147, 197, 253, 0.45);">
-              <i class="fas fa-user-plus" style="font-size: 13px; color: #93c5fd;"></i>
-            </div>
-            <div class="google-account-info">
-              <div class="google-account-name">Sign in with your Real Google ID</div>
-              <div class="google-account-email">Use any personal @gmail.com or institutional Google account</div>
-            </div>
-          </button>
-
-          <!-- Custom Account Input Panel (Collapsible) -->
-          <div id="googleCustomPanel" style="display: none; padding: 14px; background: rgba(3, 12, 22, 0.7); border-radius: 14px; margin-top: 4px; border: 1px solid rgba(147, 197, 253, 0.28);">
-            <div style="font-size: 11.5px; color: #93c5fd; margin-bottom: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Enter Your Google Account Details:</div>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-              <input type="text" id="googleCustomName" placeholder="Your Full Name (e.g. Dev Sharma)" style="width: 100%; height: 40px; border-radius: 8px; background: rgba(7, 17, 31, 0.9); border: 1px solid rgba(147, 197, 253, 0.3); color: #fff; padding: 0 12px; font-size: 12.5px; outline: none;" />
-              <div style="display: flex; gap: 8px;">
-                <input type="email" id="googleCustomEmail" placeholder="your.real.email@gmail.com or @college.edu" style="flex: 1; height: 40px; border-radius: 8px; background: rgba(7, 17, 31, 0.9); border: 1px solid rgba(147, 197, 253, 0.3); color: #fff; padding: 0 12px; font-size: 12.5px; outline: none;" />
-                <button type="button" id="googleCustomSubmit" style="height: 40px; padding: 0 16px; background: linear-gradient(110deg, #70c8ff, #8e8fff); border: none; border-radius: 8px; color: #07111f; font-weight: 800; font-size: 12.5px; cursor: pointer; white-space: nowrap;">Sign In</button>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div>
+                <label style="display: block; font-size: 11px; color: #94a3b8; margin-bottom: 4px; font-weight: 600;">Your Full Name</label>
+                <input type="text" id="googleCustomName" placeholder="e.g. Dev Sharma" value="" style="width: 100%; height: 42px; border-radius: 8px; background: rgba(7, 17, 31, 0.95); border: 1px solid rgba(147, 197, 253, 0.35); color: #fff; padding: 0 12px; font-size: 13px; outline: none;" />
               </div>
+              <div>
+                <label style="display: block; font-size: 11px; color: #94a3b8; margin-bottom: 4px; font-weight: 600;">Your Google Account Email *</label>
+                <input type="email" id="googleCustomEmail" placeholder="e.g. devs04425@gmail.com" value="" style="width: 100%; height: 42px; border-radius: 8px; background: rgba(7, 17, 31, 0.95); border: 1px solid rgba(147, 197, 253, 0.35); color: #fff; padding: 0 12px; font-size: 13px; outline: none;" required />
+              </div>
+              <button type="button" id="googleCustomSubmit" style="height: 44px; margin-top: 4px; width: 100%; background: linear-gradient(110deg, #3b82f6, #6366f1); border: none; border-radius: 8px; color: #fff; font-weight: 700; font-size: 13.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform 0.2s, box-shadow 0.2s;">
+                <i class="fab fa-google"></i> Continue with this Google Account
+              </button>
             </div>
+          </div>
+
+          <!-- Collapsible Demo Accounts (for Judges / Testing) -->
+          <button type="button" class="google-account-item google-custom-toggle" id="googleCustomToggle" style="margin-top: 8px; background: rgba(255, 255, 255, 0.03); border: 1px dashed rgba(255, 255, 255, 0.15);">
+            <div class="google-avatar-box" style="background: rgba(147, 197, 253, 0.1);">
+              <i class="fas fa-users" style="font-size: 13px; color: #94a3b8;"></i>
+            </div>
+            <div class="google-account-info">
+              <div class="google-account-name" style="color: #94a3b8; font-size: 12px;">Or test with a pre-configured demo student profile</div>
+              <div class="google-account-email" style="font-size: 11px;">Click to view demo student personas (Rahul / Ananya)</div>
+            </div>
+            <i class="fas fa-chevron-down google-account-arrow" style="color: #64748b; font-size: 11px;"></i>
+          </button>
+
+          <!-- Predefined Demo Profiles (Collapsed by default) -->
+          <div id="googleCustomPanel" style="display: none; flex-direction: column; gap: 6px; margin-top: 4px;">
+            <button type="button" class="google-account-item" data-email="rahul@eduguard.edu" data-name="Rahul Sharma" style="margin: 0;">
+              <div class="google-avatar-box" style="background: linear-gradient(135deg, #1e3a8a, #3b82f6);">
+                <span>R</span>
+              </div>
+              <div class="google-account-info">
+                <div class="google-account-name">Rahul Sharma <span class="google-account-badge">Demo</span></div>
+                <div class="google-account-email">rahul@eduguard.edu</div>
+              </div>
+            </button>
+
+            <button type="button" class="google-account-item" data-email="ananya@eduguard.edu" data-name="Ananya Verma" style="margin: 0;">
+              <div class="google-avatar-box" style="background: linear-gradient(135deg, #065f46, #10b981);">
+                <span>A</span>
+              </div>
+              <div class="google-account-info">
+                <div class="google-account-name">Ananya Verma <span class="google-account-badge">Demo</span></div>
+                <div class="google-account-email">ananya@eduguard.edu</div>
+              </div>
+            </button>
           </div>
         </div>
 

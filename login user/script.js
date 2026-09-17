@@ -610,12 +610,9 @@
       googleModal.style.display = "flex";
       googleModal.setAttribute("aria-hidden", "false");
       if (googleModalStatus) googleModalStatus.innerHTML = "";
-    }
-    // Attempt Google One-Tap if client is available
-    if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-      try {
-        google.accounts.id.prompt();
-      } catch (_) {}
+      setTimeout(() => {
+        if (googleCustomEmail) googleCustomEmail.focus();
+      }, 100);
     }
   };
 
@@ -724,12 +721,14 @@
     });
   }
 
-  // Initialize Google Identity Services (GSI) One-Tap handler
+  // Google Identity Services (GSI) One-Tap handler (active only when valid production GOOGLE_CLIENT_ID is supplied)
   window.addEventListener("load", () => {
-    if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+    // If an institutional Google Client ID is configured in meta tags or window, initialize GSI
+    const metaClientId = document.querySelector('meta[name="google-signin-client_id"]')?.content;
+    if (metaClientId && typeof google !== 'undefined' && google.accounts && google.accounts.id) {
       try {
         google.accounts.id.initialize({
-          client_id: "1088487739502-eduguard-campus.apps.googleusercontent.com",
+          client_id: metaClientId,
           callback: (response) => {
             if (response && response.credential) {
               const payload = parseJwt(response.credential);

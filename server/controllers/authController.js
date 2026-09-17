@@ -386,19 +386,20 @@ exports.googleAuth = async (req, res) => {
 
     const cleanEmail = email.toLowerCase().trim();
 
-    // 1. Look up existing user directly or by known demo aliases
+    // 1. Look up existing user strictly by clean email
     let user = await User.findOne({ email: cleanEmail });
 
+    // Only fallback for predefined demo credentials if exact match
     if (!user) {
-      if (cleanEmail === 'student@eduguard.edu' || cleanEmail.includes('rahul')) {
+      if (cleanEmail === 'student@eduguard.edu') {
         user = await User.findOne({ email: 'rahul@eduguard.edu' });
-      } else if (cleanEmail === 'faculty@eduguard.edu' || cleanEmail.includes('ramesh')) {
+      } else if (cleanEmail === 'faculty@eduguard.edu') {
         user = await User.findOne({ email: 'ramesh@eduguard.edu' });
-      } else if (cleanEmail === 'staff@eduguard.edu' || cleanEmail.includes('suresh')) {
+      } else if (cleanEmail === 'staff@eduguard.edu') {
         user = await User.findOne({ email: 'suresh@eduguard.edu' });
-      } else if (cleanEmail === 'hod@eduguard.edu' || cleanEmail.includes('priya')) {
+      } else if (cleanEmail === 'hod@eduguard.edu') {
         user = await User.findOne({ email: 'priya@eduguard.edu' });
-      } else if (cleanEmail === 'admin@eduguard.edu' || cleanEmail.includes('admin') || cleanEmail.includes('vikram')) {
+      } else if (cleanEmail === 'admin@eduguard.edu') {
         user = await User.findOne({ email: 'admin@eduguard.edu' }) || await User.findOne({ role: 'ADMIN' });
       }
     }
@@ -473,6 +474,9 @@ exports.googleAuth = async (req, res) => {
     }
 
     user.lastLogin = new Date();
+    if (name && name.trim() && user.name !== name.trim()) {
+      user.name = name.trim();
+    }
     if (avatar && !user.avatar) {
       user.avatar = avatar;
     }
