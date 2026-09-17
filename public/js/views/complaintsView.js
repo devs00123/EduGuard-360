@@ -219,9 +219,16 @@ const ComplaintsView = {
           <td><span class="status-pill ${c.status}">${c.status.replace('_', ' ')}</span></td>
           <td>${slaBadge}</td>
           <td>
-            <button class="btn btn-secondary btn-sm btn-view-complaint" data-id="${c._id}">
-              <i class="fas fa-info-circle"></i> Details
-            </button>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <button class="btn btn-secondary btn-sm btn-view-complaint" data-id="${c._id}" title="View complaint details">
+                <i class="fas fa-info-circle"></i> Details
+              </button>
+              ${(user?.role === 'ADMIN' || user?.role === 'FACULTY' || user?.role === 'DEPARTMENT_STAFF' || user?.role === 'DEPARTMENT_HEAD') && c.status !== 'RESOLVED' && c.status !== 'STUDENT_CONFIRMED' ? `
+                <button class="btn btn-success btn-sm btn-quick-resolve" data-id="${c._id}" data-ticket="${c.ticketId}" title="Resolve incident & upload proof photo">
+                  <i class="fas fa-check-circle"></i> Resolve
+                </button>
+              ` : ''}
+            </div>
           </td>
         </tr>
       `;
@@ -234,6 +241,93 @@ const ComplaintsView = {
         const id = btn.getAttribute('data-id');
         ComplaintsView.openDetailModal(id);
       });
+    });
+
+    container.querySelectorAll('.btn-quick-resolve').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-id');
+        const ticketId = btn.getAttribute('data-ticket');
+        ComplaintsView.openResolveModal(id, ticketId);
+      });
+    });
+  },
+
+  openResolveModal(complaintId, ticketId) {
+    UI.showModal({
+      title: `Resolve Incident: ${ticketId}`,
+      body: `
+        <form id="form-resolve-complaint" style="display: flex; flex-direction: column; gap: 14px;">
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
+            Mark this campus facility issue as completed, provide maintenance remarks, and optionally attach a photo of the resolved facility for student confirmation.
+          </p>
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" style="font-size: 0.8rem; font-weight: 700;">Resolution Notes / Summary *</label>
+            <textarea id="resolve-notes" class="form-control" rows="3" required placeholder="e.g. Replaced faulty hardware, tested functionality on site." style="width: 100%; border-radius: var(--radius-md); padding: 0.6rem; font-family: inherit;">Repaired, replaced and verified operational on site.</textarea>
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" style="font-size: 0.8rem; font-weight: 700;">Upload Resolution Proof Photo (Optional)</label>
+            <input type="file" id="resolve-proof-file" class="form-control" accept="image/*" style="padding: 6px;" />
+            <span style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; display: block;">Supports JPG, PNG, WEBP (Max 5MB)</span>
+            <div id="resolve-preview-container" style="margin-top: 8px; display: none;">
+              <img id="resolve-preview-img" style="max-height: 160px; max-width: 100%; border-radius: var(--radius-md); border: 1px solid var(--border-color); object-fit: cover;" alt="Preview" />
+            </div>
+          </div>
+        </form>
+      `,
+      footer: `
+        <button class="btn btn-outline" style="padding: 0.4rem 0.8rem; border-radius: var(--radius-md); margin-right: 0.5rem;" onclick="UI.closeModal()">Cancel</button>
+        <button class="btn btn-success" id="btn-submit-resolution" style="padding: 0.4rem 0.8rem; border-radius: var(--radius-md);">
+          <i class="fas fa-check"></i> Submit & Mark Resolved
+        </button>
+      `
+    });
+
+    const fileInput = document.getElementById('resolve-proof-file');
+    const previewContainer = document.getElementById('resolve-preview-container');
+    const previewImg = document.getElementById('resolve-preview-img');
+
+    fileInput?.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (re) => {
+          previewImg.src = re.target.result;
+          previewContainer.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      } else {
+        previewContainer.style.display = 'none';
+      }
+    });
+
+    document.getElementById('btn-submit-resolution')?.addEventListener('click', async () => {
+      const notes = document.getElementById('resolve-notes')?.value?.trim();
+      if (!notes) {
+        UI.toast('Please provide resolution notes.', 'warning');
+        return;
+      }
+      const submitBtn = document.getElementById('btn-submit-resolution');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+      try {
+        const formData = new FormData();
+        formData.append('notes', notes);
+        const file = fileInput?.files?.[0];
+        if (file) {
+          formData.append('resolutionProof', file);
+        }
+
+        await API.resolveComplaint(complaintId, formData);
+        UI.toast('Issue marked RESOLVED! Student notified for confirmation.', 'success');
+        UI.closeModal();
+        App.renderCurrentView();
+      } catch (err) {
+        UI.toast(err.message || 'Failed to resolve complaint', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-check"></i> Submit & Mark Resolved';
+      }
     });
   },
 
@@ -315,11 +409,11 @@ const ComplaintsView = {
         <div style="border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: 16px;">
           <h4 style="font-size: 0.85rem; font-weight: 700; margin-bottom: 10px;">Workflow Actions:</h4>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            ${(user?.role === 'DEPARTMENT_STAFF' || user?.role === 'DEPARTMENT_HEAD' || user?.role === 'ADMIN') && c.status === 'ASSIGNED' ? `
+            ${(user?.role === 'DEPARTMENT_STAFF' || user?.role === 'DEPARTMENT_HEAD' || user?.role === 'ADMIN' || user?.role === 'FACULTY') && c.status === 'ASSIGNED' ? `
               <button id="btn-start-work" class="btn btn-primary btn-sm"><i class="fas fa-play"></i> Start Work (In Progress)</button>
             ` : ''}
 
-            ${(user?.role === 'DEPARTMENT_STAFF' || user?.role === 'DEPARTMENT_HEAD' || user?.role === 'ADMIN') && (c.status === 'IN_PROGRESS' || c.status === 'ASSIGNED' || c.status === 'SUBMITTED' || c.status === 'AI_ANALYZED') ? `
+            ${(user?.role === 'DEPARTMENT_STAFF' || user?.role === 'DEPARTMENT_HEAD' || user?.role === 'ADMIN' || user?.role === 'FACULTY') && c.status !== 'RESOLVED' && c.status !== 'STUDENT_CONFIRMED' ? `
               <button id="btn-resolve-issue" class="btn btn-success btn-sm"><i class="fas fa-check-circle"></i> Resolve & Upload Proof Photo</button>
             ` : ''}
 
@@ -344,81 +438,7 @@ const ComplaintsView = {
       });
 
       document.getElementById('btn-resolve-issue')?.addEventListener('click', () => {
-        UI.showModal({
-          title: `Resolve Incident: ${c.ticketId}`,
-          body: `
-            <form id="form-resolve-complaint" style="display: flex; flex-direction: column; gap: 14px;">
-              <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
-                Mark this campus facility issue as completed, provide maintenance remarks, and optionally attach a photo of the resolved facility for student confirmation.
-              </p>
-              <div class="form-group" style="margin: 0;">
-                <label class="form-label" style="font-size: 0.8rem; font-weight: 700;">Resolution Notes / Summary *</label>
-                <textarea id="resolve-notes" class="form-control" rows="3" required placeholder="e.g. Replaced faulty Wi-Fi access point, tested connectivity with 250Mbps throughput." style="width: 100%; border-radius: var(--radius-md); padding: 0.6rem; font-family: inherit;">Hardware repaired, replaced and tested operational on site.</textarea>
-              </div>
-              <div class="form-group" style="margin: 0;">
-                <label class="form-label" style="font-size: 0.8rem; font-weight: 700;">Upload Resolution Proof Photo (Optional)</label>
-                <input type="file" id="resolve-proof-file" class="form-control" accept="image/*" style="padding: 6px;" />
-                <span style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; display: block;">Supports JPG, PNG, WEBP (Max 5MB)</span>
-                <div id="resolve-preview-container" style="margin-top: 8px; display: none;">
-                  <img id="resolve-preview-img" style="max-height: 160px; max-width: 100%; border-radius: var(--radius-md); border: 1px solid var(--border-color); object-fit: cover;" alt="Preview" />
-                </div>
-              </div>
-            </form>
-          `,
-          footer: `
-            <button class="btn btn-outline" style="padding: 0.4rem 0.8rem; border-radius: var(--radius-md); margin-right: 0.5rem;" onclick="UI.closeModal()">Cancel</button>
-            <button class="btn btn-success" id="btn-submit-resolution" style="padding: 0.4rem 0.8rem; border-radius: var(--radius-md);">
-              <i class="fas fa-check"></i> Submit & Mark Resolved
-            </button>
-          `
-        });
-
-        const fileInput = document.getElementById('resolve-proof-file');
-        const previewContainer = document.getElementById('resolve-preview-container');
-        const previewImg = document.getElementById('resolve-preview-img');
-
-        fileInput?.addEventListener('change', (e) => {
-          const file = e.target.files?.[0];
-          if (file) {
-            const reader = new FileReader();
-            reader.onload = (re) => {
-              previewImg.src = re.target.result;
-              previewContainer.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-          } else {
-            previewContainer.style.display = 'none';
-          }
-        });
-
-        document.getElementById('btn-submit-resolution')?.addEventListener('click', async () => {
-          const notes = document.getElementById('resolve-notes')?.value?.trim();
-          if (!notes) {
-            UI.toast('Please provide resolution notes.', 'warning');
-            return;
-          }
-          const submitBtn = document.getElementById('btn-submit-resolution');
-          submitBtn.disabled = true;
-          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
-
-          try {
-            const formData = new FormData();
-            formData.append('notes', notes);
-            const file = fileInput?.files?.[0];
-            if (file) {
-              formData.append('resolutionProof', file);
-            }
-
-            await API.resolveComplaint(c._id, formData);
-            UI.toast('Issue marked RESOLVED! Student notified for confirmation.', 'success');
-            UI.closeModal();
-            App.renderCurrentView();
-          } catch (err) {
-            UI.toast(err.message || 'Failed to resolve complaint', 'error');
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-check"></i> Submit & Mark Resolved';
-          }
-        });
+        ComplaintsView.openResolveModal(c._id, c.ticketId);
       });
 
       document.getElementById('btn-confirm-res')?.addEventListener('click', async () => {
