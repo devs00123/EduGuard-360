@@ -237,6 +237,23 @@ const App = {
       }
     }
 
+    // Fetch and apply institutional configuration
+    try {
+      const cfgRes = await fetch('/api/config/institution');
+      if (cfgRes.ok) {
+        const cfg = await cfgRes.json();
+        if (cfg && !cfg.demoMode) {
+          document.querySelectorAll('.demo-pill, .demo-switcher, [data-demo-only]').forEach(el => {
+            el.style.display = 'none';
+          });
+        }
+        if (cfg && cfg.shortName) {
+          const brandSub = document.querySelector('.brand-text p');
+          if (brandSub) brandSub.textContent = `${cfg.shortName} Campus System`;
+        }
+      }
+    } catch (_) {}
+
     SocketClient.init();
     Emergency.init();
     Chatbot.init();

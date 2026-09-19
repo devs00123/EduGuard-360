@@ -2,20 +2,30 @@ services:
   - type: web
     name: eduguard-360
     runtime: node
-    plan: free
+    plan: standard
     buildCommand: npm install
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: DEMO_MODE
-        value: "true"
+        value: "false"
       - key: MONGODB_URI
         sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN
         value: 7d
+      - key: INSTITUTION_NAME
+        value: "University Campus"
+      - key: INSTITUTION_CODE
+        value: "CAMPUS"
+      - key: INSTITUTION_DOMAIN
+        value: "campus.edu"
+      - key: CAMPUS_HELPLINE
+        value: "+91 11 2345 6789"
+      - key: SUPPORT_EMAIL
+        value: "support@campus.edu"
       - key: SLA_CRITICAL_HOURS
         value: "4"
       - key: SLA_HIGH_HOURS

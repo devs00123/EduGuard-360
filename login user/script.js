@@ -583,6 +583,27 @@
     });
   }
 
+  // Institutional Config & Demo Mode Integration
+  fetch('/api/config/institution')
+    .then(r => r.json())
+    .then(res => {
+      if (res.success && res.data) {
+        const d = res.data;
+        if (!d.demoMode) {
+          const demoContainer = document.getElementById('evaluatorDemoContainer');
+          if (demoContainer) demoContainer.style.display = 'none';
+          const demoToggle = document.getElementById('googleCustomToggle');
+          if (demoToggle) demoToggle.style.display = 'none';
+          const customPanel = document.getElementById('googleCustomPanel');
+          if (customPanel) customPanel.style.display = 'none';
+        }
+        if (d.institutionName) {
+          document.title = `${d.institutionShortName || 'EduGuard 360'} — Student Portal`;
+        }
+      }
+    })
+    .catch(() => {});
+
   // Google Sign-In with Account Selector & Real Google ID Authentication
   const googleModal = document.getElementById("googleAuthModal");
   const googleBackdrop = document.getElementById("googleBackdrop");

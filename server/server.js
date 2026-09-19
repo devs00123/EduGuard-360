@@ -126,11 +126,23 @@ app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
 // Disable default index.html serving so root URL "/" does not bypass authentication
 app.use(express.static(path.resolve(__dirname, '../public'), { index: false }));
 
+const { getPublicConfig } = require('./config/institution');
+
 // Authentication Portals & Direct Routes
-// Root route: Redirect all root visits (e.g., when opening the Render deployment) to Student Login
+// Root route: Institutional Gateway Portal (Student & Staff/Admin Choice)
 app.get('/', (req, res) => {
-  res.redirect('/student/login');
+  res.sendFile(path.resolve(__dirname, '../public/portal.html'));
 });
+
+app.get('/portal', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../public/portal.html'));
+});
+
+// Canonical Shortcuts
+app.get('/student', (req, res) => res.redirect('/student/login'));
+app.get('/staff', (req, res) => res.redirect('/staff/login'));
+app.get('/admin', (req, res) => res.redirect('/staff/login'));
+app.get('/login', (req, res) => res.redirect('/portal'));
 
 app.get('/student/login', (req, res) => {
   res.sendFile(path.resolve(__dirname, '../login user/index.html'));
@@ -144,14 +156,16 @@ app.get('/staff/login', (req, res) => {
 app.get('/staff/register', (req, res) => {
   res.sendFile(path.resolve(__dirname, '../login admin/admin-register.html'));
 });
-app.get('/portal', (req, res) => {
-  res.sendFile(path.resolve(__dirname, '../public/portal.html'));
-});
-app.get('/login', (req, res) => {
-  res.redirect('/student/login');
-});
 app.get(['/dashboard', '/student/dashboard', '/faculty/dashboard', '/staff/dashboard', '/department-head/dashboard', '/admin/dashboard'], (req, res) => {
   res.sendFile(path.resolve(__dirname, '../public/index.html'));
+});
+
+// Public Institutional Identity & Config Endpoint
+app.get('/api/config/institution', (req, res) => {
+  res.json({
+    success: true,
+    data: getPublicConfig()
+  });
 });
 
 // API Routes
@@ -218,10 +232,11 @@ setInterval(async () => {
 
 // Global Error Handler
 app.use((err, req, res, next) => {
-  console.error('[Express Error]', err.stack);
+  const isProd = process.env.NODE_ENV === 'production';
+  console.error('[Express Error]', isProd ? err.message : err.stack);
   res.status(err.status || 500).json({
     success: false,
-    message: err.message || 'Internal Server Error'
+    message: isProd && (!err.status || err.status === 500) ? 'An unexpected institutional service error occurred.' : err.message
   });
 });
 
@@ -231,10 +246,29 @@ app.get('*', (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
+const runningServer = server.listen(PORT, () => {
   console.log(`====================================================`);
-  console.log(` EDUGUARD 360 SERVER RUNNING ON PORT ${PORT}`);
-  console.log(` URL: http://localhost:${PORT}`);
+  console.log(` EDUGUARD 360 INSTITUTIONAL PLATFORM RUNNING`);
+  console.log(` Port: ${PORT}`);
   console.log(` Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(` Demo Mode: ${process.env.DEMO_MODE === 'true' ? 'ENABLED (Testing)' : 'DISABLED (Production)'}`);
   console.log(`====================================================`);
 });
+
+// Graceful Shutdown for Zero-Downtime Reloads
+const gracefulShutdown = (signal) => {
+  console.log(`[Server] Received ${signal}. Commencing graceful institutional shutdown...`);
+  runningServer.close(async () => {
+    try {
+      await mongoose.connection.close();
+      console.log('[Server] Database connections closed cleanly.');
+      process.exit(0);
+    } catch (e) {
+      console.error('[Server] Error closing database connection:', e);
+      process.exit(1);
+    }
+  });
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));

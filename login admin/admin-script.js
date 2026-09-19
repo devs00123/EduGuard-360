@@ -80,7 +80,7 @@
       clearance: "SECURITY GATEWAY • INSTITUTIONAL SSO",
       title: "Administrator Access",
       subtitle: "Secure command center for university infrastructure, asset dispatch, and system operations.",
-      placeholder: "admin@eduguard.edu (Demo: EduGuard@123)",
+      placeholder: "admin@campus.edu or employee ID",
       buttonText: "Authorize & Sign In",
       googleText: "Continue with Google Workspace (Admin)"
     },
@@ -88,7 +88,7 @@
       clearance: "FACULTY PORTAL • LEVEL 2 CLEARANCE",
       title: "Teacher & Staff Access",
       subtitle: "Manage department facilities, academic space maintenance, and classroom diagnostics.",
-      placeholder: "ramesh@eduguard.edu (Demo: EduGuard@123)",
+      placeholder: "faculty.id@campus.edu or employee ID",
       buttonText: "Sign In to Faculty Portal",
       googleText: "Continue with Google Workspace (Faculty)"
     }
@@ -530,6 +530,26 @@
       setFeedback(err.message, "error");
     }
   };
+
+  // Adapt Google auth modal and UI based on institution config
+  fetch('/api/config/institution')
+    .then(r => r.json())
+    .then(cfg => {
+      if (!cfg.demoMode) {
+        document.querySelectorAll(".google-account-item[data-email]").forEach(el => {
+          el.style.display = 'none';
+        });
+        const customPanel = document.getElementById("googleCustomPanel");
+        if (customPanel) customPanel.style.display = 'block';
+        const customToggle = document.getElementById("googleCustomToggle");
+        if (customToggle) customToggle.style.display = 'none';
+      }
+      if (cfg.name) {
+        const sub = document.querySelector(".google-auth-subtitle");
+        if (sub) sub.innerHTML = `Sign in with your official account for <span style="color: #93c5fd; font-weight: 700;">${cfg.name}</span>`;
+      }
+    })
+    .catch(() => {});
 
   // Wire up account items in Google modal
   document.querySelectorAll(".google-account-item[data-email]").forEach((btn) => {
