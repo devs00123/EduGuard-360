@@ -41,8 +41,20 @@
       outline: none;
       transition: border-color 0.2s;
     }
-    select.reg-select:focus {
-      border-color: #6366f1;
+    .reg-card {
+      max-width: 520px;
+      width: 100%;
+    }
+    @media (max-width: 640px) {
+      .reg-card {
+        max-width: 100% !important;
+        padding: 20px 16px 18px !important;
+      }
+      select.reg-select {
+        height: 44px;
+        font-size: 13px;
+        border-radius: 10px;
+      }
     }
   </style>
 </head>
@@ -72,7 +84,7 @@
 
     <!-- REGISTRATION SHELL -->
     <section class="login-shell" aria-label="Student Registration">
-      <div class="login-card" id="loginCard" style="max-width: 520px;">
+      <div class="login-card reg-card" id="loginCard">
 
         <!-- BRAND -->
         <div class="brand">

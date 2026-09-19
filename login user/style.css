@@ -1209,14 +1209,15 @@ a {
 
 
 /* =========================================================
-   TABLETS & MEDIUM SCREENS (1023px and down)
+   TABLETS & MEDIUM SCREENS (1180px and down)
 ========================================================= */
 
-@media (max-width: 1023px) {
+@media (max-width: 1180px) {
 
   .login-shell {
     justify-content: center;
     padding: 36px 24px 60px;
+    align-items: center;
   }
 
   .login-card {
@@ -1229,13 +1230,13 @@ a {
     background:
       radial-gradient(
         circle at 50% 50%,
-        rgba(3, 10, 20, 0.65) 0%,
-        rgba(2, 9, 18, 0.55) 100%
+        rgba(3, 10, 20, 0.72) 0%,
+        rgba(2, 9, 18, 0.85) 100%
       ),
       linear-gradient(
         180deg,
         rgba(1, 7, 13, 0.45) 0%,
-        rgba(2, 8, 16, 0.78) 100%
+        rgba(2, 8, 16, 0.82) 100%
       );
   }
 
@@ -1256,51 +1257,53 @@ a {
 @media (max-width: 640px) {
 
   .login-shell {
-    padding: 20px 14px 48px;
+    padding: 18px 12px 42px;
     align-items: flex-start;
+    justify-content: center;
   }
 
   .login-card {
-    padding: 24px 18px 20px;
+    padding: 22px 16px 18px;
     border-radius: 20px;
     backdrop-filter: blur(16px) saturate(140%);
     -webkit-backdrop-filter: blur(16px) saturate(140%);
-    margin: auto 0;
+    margin: 0 auto;
     width: 100%;
-    max-width: 420px;
+    max-width: 100%;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
   }
 
   .brand {
-    gap: 9px;
-    margin-bottom: 18px;
+    gap: 8px;
+    margin-bottom: 16px;
   }
 
   .brand-mark {
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
   }
 
   .brand-name {
-    font-size: 16px;
+    font-size: 15.5px;
   }
 
   .intro {
-    margin-bottom: 18px;
+    margin-bottom: 16px;
   }
 
   .eyebrow {
-    font-size: 9px;
-    margin-bottom: 6px;
+    font-size: 8.5px;
+    margin-bottom: 5px;
   }
 
   .intro h1 {
-    font-size: clamp(24px, 7vw, 29px);
+    font-size: clamp(22px, 6.5vw, 26px);
   }
 
   .subtext {
-    font-size: 12.5px;
-    line-height: 1.5;
-    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.45;
+    margin-top: 5px;
   }
 
   .field {
@@ -1308,57 +1311,60 @@ a {
   }
 
   .field > span {
-    font-size: 11.5px;
-    margin-bottom: 6px;
+    font-size: 11px;
+    margin-bottom: 5px;
   }
 
   .input-wrap input {
-    height: 48px;
-    font-size: 13.5px;
-    padding: 0 42px 0 40px;
-    border-radius: 13px;
+    height: 44px;
+    font-size: 13px;
+    padding: 0 38px 0 36px;
+    border-radius: 12px;
   }
 
   .input-wrap > svg {
-    left: 12px;
-    width: 16px;
-    height: 16px;
+    left: 11px;
+    width: 15px;
+    height: 15px;
   }
 
   .icon-btn {
-    right: 8px;
+    right: 6px;
     width: 32px;
     height: 32px;
   }
 
   .icon-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 15px;
+    height: 15px;
   }
 
   .row-between {
-    margin-bottom: 14px;
-    font-size: 11px;
+    margin-bottom: 12px;
+    font-size: 10.5px;
+    flex-wrap: wrap;
+    gap: 6px;
   }
 
   .primary-btn,
   .google-btn {
-    height: 48px;
-    border-radius: 13px;
+    height: 45px;
+    border-radius: 12px;
     font-size: 13px;
+    min-height: 44px;
   }
 
   .divider {
-    margin: 14px 0;
+    margin: 12px 0;
   }
 
   .signup {
-    margin-top: 15px;
+    margin-top: 14px;
     font-size: 11px;
   }
 
   .ambient-label {
-    bottom: 10px;
+    bottom: 8px;
     font-size: 7.5px;
     gap: 6px;
   }
@@ -1372,16 +1378,28 @@ a {
 @media (max-width: 380px) {
 
   .login-card {
-    padding: 20px 14px 18px;
-    border-radius: 18px;
+    padding: 18px 12px 16px;
+    border-radius: 16px;
   }
 
   .intro h1 {
-    font-size: 23px;
+    font-size: 21px;
   }
 
   .brand-name {
-    font-size: 15px;
+    font-size: 14.5px;
+  }
+
+  .input-wrap input {
+    height: 42px;
+    font-size: 12.5px;
+    padding: 0 34px 0 32px;
+  }
+
+  .primary-btn,
+  .google-btn {
+    height: 42px;
+    font-size: 12.5px;
   }
 }
 

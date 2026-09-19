@@ -291,11 +291,19 @@ const App = {
     document.getElementById('sidebar-logout-btn')?.addEventListener('click', doLogout);
     document.getElementById('topbar-logout-btn')?.addEventListener('click', doLogout);
 
-    // Mobile Sidebar toggle
-    document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
+    // Mobile Sidebar toggle with backdrop support
+    const toggleMobileSidebar = (forceClose) => {
       const sidebar = document.querySelector('.app-sidebar');
-      if (sidebar) sidebar.classList.toggle('open');
-    });
+      const backdrop = document.getElementById('sidebar-backdrop');
+      if (!sidebar) return;
+      const willOpen = forceClose === true ? false : !sidebar.classList.contains('open');
+      sidebar.classList.toggle('open', willOpen);
+      if (backdrop) backdrop.classList.toggle('active', willOpen);
+      document.body.classList.toggle('sidebar-open', willOpen);
+    };
+
+    document.getElementById('mobile-menu-btn')?.addEventListener('click', () => toggleMobileSidebar());
+    document.getElementById('sidebar-backdrop')?.addEventListener('click', () => toggleMobileSidebar(true));
 
     // Close Modal button & backdrop
     document.getElementById('modal-close-btn')?.addEventListener('click', () => UI.closeModal());
@@ -633,6 +641,8 @@ const App = {
 
     // Close mobile sidebar if open
     document.querySelector('.app-sidebar')?.classList.remove('open');
+    document.getElementById('sidebar-backdrop')?.classList.remove('active');
+    document.body.classList.remove('sidebar-open');
     this.renderCurrentView();
   },
 
