@@ -2,7 +2,7 @@ services:
   - type: web
     name: eduguard-360
     runtime: node
-    plan: standard
+    plan: free
     buildCommand: npm install
     startCommand: npm start
     envVars:
