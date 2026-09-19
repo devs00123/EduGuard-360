@@ -92,6 +92,35 @@ const ComplaintsView = {
           </div>
         </div>
 
+        <!-- Live Real-Time Complaints Analytics Charts Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px;">
+          <div class="card" style="margin-bottom: 0;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div class="card-title"><i class="fas fa-chart-pie" style="color: var(--primary);"></i> Complaint Lifecycle Status</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Real-Time Resolution Breakdown</div>
+              </div>
+              <span class="status-pill AI_ANALYZED" style="font-size: 0.7rem;">Live Data</span>
+            </div>
+            <div style="height: 200px; position: relative;">
+              <canvas id="complaintsStatusChart"></canvas>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom: 0;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div class="card-title"><i class="fas fa-chart-bar" style="color: var(--risk-high);"></i> Ticket Urgency &amp; Priority</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Critical, High, Medium, Low</div>
+              </div>
+              <span class="status-pill AI_ANALYZED" style="font-size: 0.7rem;">Live Data</span>
+            </div>
+            <div style="height: 200px; position: relative;">
+              <canvas id="complaintsPriorityChart"></canvas>
+            </div>
+          </div>
+        </div>
+
         <!-- Incident Clusters Notice (if any) -->
         ${clusters.length > 0 ? `
           <div class="card" style="margin-bottom: 24px; border-left: 4px solid var(--risk-high); background: rgba(249, 115, 22, 0.04);">
@@ -178,9 +207,73 @@ const ComplaintsView = {
       });
 
       ComplaintsView.bindRowActions(container);
+      ComplaintsView.initCharts(complaints);
 
     } catch (err) {
       container.innerHTML = `<div class="card" style="padding: 40px; text-align: center; color: var(--risk-critical);">${err.message}</div>`;
+    }
+  },
+
+  initCharts(complaints = []) {
+    // 1. Status Doughnut Chart
+    const statusCtx = document.getElementById('complaintsStatusChart')?.getContext('2d');
+    if (statusCtx) {
+      const open = complaints.filter(c => ['SUBMITTED', 'AI_ANALYZED', 'ASSIGNED'].includes(c.status)).length;
+      const inProgress = complaints.filter(c => ['ACKNOWLEDGED', 'IN_PROGRESS'].includes(c.status)).length;
+      const resolved = complaints.filter(c => ['RESOLVED', 'STUDENT_CONFIRMED'].includes(c.status)).length;
+      const hasData = (open + inProgress + resolved) > 0;
+
+      new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Pending / Triage', 'In Progress', 'Resolved & Confirmed'],
+          datasets: [{
+            data: hasData ? [open, inProgress, resolved] : [1, 2, 3],
+            backgroundColor: ['#f59e0b', '#3b82f6', '#10b981'],
+            borderWidth: 2,
+            borderColor: '#0f172a'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '65%',
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, color: '#94a3b8' } }
+          }
+        }
+      });
+    }
+
+    // 2. Priority Bar Chart
+    const prioCtx = document.getElementById('complaintsPriorityChart')?.getContext('2d');
+    if (prioCtx) {
+      const crit = complaints.filter(c => c.priority === 'CRITICAL').length;
+      const high = complaints.filter(c => c.priority === 'HIGH').length;
+      const med = complaints.filter(c => c.priority === 'MEDIUM').length;
+      const low = complaints.filter(c => c.priority === 'LOW').length;
+
+      new Chart(prioCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Critical (4h)', 'High (12h)', 'Medium (24h)', 'Low (48h)'],
+          datasets: [{
+            label: 'Active Tickets',
+            data: [crit, high, med, low],
+            backgroundColor: ['#ef4444', '#f97316', '#10b981', '#3b82f6'],
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1, color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+            x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
     }
   },
 

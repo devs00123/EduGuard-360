@@ -2,7 +2,12 @@ const express = require('express');
 const router = express.Router();
 const {
   getUsers,
+  createUser,
+  resetUserPassword,
+  toggleUserStatus,
+  deleteUser,
   getDepartments,
+  getCourses,
   createDepartment,
   getCategories,
   createCategory,
@@ -19,7 +24,12 @@ router.use(protect);
 router.use(authorize('ADMIN'));
 
 router.get('/users', getUsers);
+router.post('/users', createUser);
+router.post('/users/:id/reset-password', resetUserPassword);
+router.patch('/users/:id/toggle-status', toggleUserStatus);
+router.delete('/users/:id', deleteUser);
 router.get('/departments', getDepartments);
+router.get('/courses', getCourses);
 router.post('/departments', createDepartment);
 router.get('/categories', getCategories);
 router.post('/categories', createCategory);

@@ -280,7 +280,7 @@ async function runTests() {
   assert(!!sampleComplaint?.slaStatus, 'Complaint includes dynamically computed slaStatus tag', `SLA: ${sampleComplaint?.slaStatus}`);
 
   // --- 9. RATE LIMITING HEADERS ---
-  console.log('\n[9/9] Testing Rate Limiting Protection...');
+  console.log('\n[9/10] Testing Rate Limiting Protection...');
   const rateLimitCheck = await request({
     host: 'localhost',
     port: 5050,
@@ -289,6 +289,77 @@ async function runTests() {
     headers: { 'Content-Type': 'application/json' }
   }, { email: 'test@eduguard.edu', password: 'wrong' });
   assert(!!rateLimitCheck.headers['ratelimit-limit'], 'RateLimit-Limit header present', `Limit: ${rateLimitCheck.headers['ratelimit-limit']}`);
+
+  // --- 10. ADMIN USER MANAGEMENT & ON-DEMAND PASSWORD RESET ---
+  console.log('\n[10/10] Testing Admin User Management & On-Demand Password Reset...');
+  const adminLogin = await request({
+    host: 'localhost',
+    port: 5050,
+    path: '/api/auth/login',
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  }, { email: 'admin@eduguard.edu', password: 'EduGuard@123' });
+  assert(adminLogin.status === 200 && adminLogin.data?.user?.role === 'ADMIN', 'Admin login successful');
+  const adminToken = adminLogin.data?.token;
+
+  // 1. Admin creates a new student
+  const testStudentEmail = `test.student.${Date.now()}@eduguard.edu`;
+  const createStudentRes = await request({
+    host: 'localhost',
+    port: 5050,
+    path: '/api/admin/users',
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` }
+  }, {
+    name: 'New Test Student',
+    email: testStudentEmail,
+    role: 'STUDENT',
+    rollNumber: `STU${Date.now().toString().slice(-5)}`,
+    currentSemester: 2
+  });
+  assert(createStudentRes.status === 201, 'Admin successfully created new student account');
+  assert(!!createStudentRes.data?.user?._id, 'Student created with valid database ID');
+  const createdStudentId = createStudentRes.data?.user?._id;
+
+  // 2. Admin resets student's password
+  const newSecretPassword = 'SecureBrandNew2026!';
+  const resetPwRes = await request({
+    host: 'localhost',
+    port: 5050,
+    path: `/api/admin/users/${createdStudentId}/reset-password`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` }
+  }, { newPassword: newSecretPassword });
+  assert(resetPwRes.status === 200, 'Admin successfully reset student password');
+
+  // 3. Student can log in with new password
+  const newLoginRes = await request({
+    host: 'localhost',
+    port: 5050,
+    path: '/api/auth/login',
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  }, { email: testStudentEmail, password: newSecretPassword });
+  assert(newLoginRes.status === 200, 'Student successfully authenticated with admin-reset password');
+
+  // 4. Non-admin forbidden check
+  const nonAdminTry = await request({
+    host: 'localhost',
+    port: 5050,
+    path: '/api/admin/users',
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${studentToken}` }
+  }, { name: 'Hacker', email: 'hack@test.com', role: 'ADMIN' });
+  assert(nonAdminTry.status === 403, 'Non-admin strictly forbidden from admin user management (HTTP 403)');
+
+  // 5. Cleanup test user
+  await request({
+    host: 'localhost',
+    port: 5050,
+    path: `/api/admin/users/${createdStudentId}`,
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${adminToken}` }
+  });
 
   console.log('\n====================================================');
   console.log(`--- TEST RESULTS: ${passCount} PASSED, ${failCount} FAILED ---`);

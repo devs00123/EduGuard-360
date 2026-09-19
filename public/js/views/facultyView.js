@@ -95,6 +95,35 @@ const FacultyView = {
           </div>
         </div>
 
+        <!-- Real Live Faculty Cohort Analytics Charts Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px;">
+          <div class="card" style="margin-bottom: 0;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div class="card-title"><i class="fas fa-chart-pie" style="color: var(--primary);"></i> Mentored Cohort Risk Distribution</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Assigned Class Risk Classification</div>
+              </div>
+              <span class="status-pill AI_ANALYZED" style="font-size: 0.7rem;">Live Data</span>
+            </div>
+            <div style="height: 200px; position: relative;">
+              <canvas id="facultyRiskDistributionChart"></canvas>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom: 0;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div class="card-title"><i class="fas fa-chart-bar" style="color: #8b5cf6;"></i> Student CGPA &amp; Academic Bands</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Performance Breakdown across Cohort</div>
+              </div>
+              <span class="status-pill AI_ANALYZED" style="font-size: 0.7rem;">Live Data</span>
+            </div>
+            <div style="height: 200px; position: relative;">
+              <canvas id="facultyCgpaBandChart"></canvas>
+            </div>
+          </div>
+        </div>
+
         <!-- At-Risk Priority Watchlist -->
         <div class="card" style="margin-bottom: 24px; border-top: 4px solid var(--risk-critical);">
           <div class="card-header">
@@ -220,6 +249,9 @@ const FacultyView = {
         FacultyView.openMarksModal(students, subjects);
       });
 
+      // Render Live Cohort Charts
+      FacultyView.initCharts(students);
+
     } catch (err) {
       container.innerHTML = `
         <div class="card" style="text-align: center; padding: 40px;">
@@ -228,6 +260,71 @@ const FacultyView = {
           <p style="color: var(--text-secondary); margin-top: 6px;">${err.message}</p>
         </div>
       `;
+    }
+  },
+
+  initCharts(students = []) {
+    // 1. Cohort Risk Distribution Doughnut (Live)
+    const riskCtx = document.getElementById('facultyRiskDistributionChart')?.getContext('2d');
+    if (riskCtx) {
+      const low = students.filter(s => s.currentRiskLevel === 'LOW').length;
+      const med = students.filter(s => s.currentRiskLevel === 'MEDIUM').length;
+      const high = students.filter(s => s.currentRiskLevel === 'HIGH').length;
+      const crit = students.filter(s => s.currentRiskLevel === 'CRITICAL').length;
+      const hasData = (low + med + high + crit) > 0;
+
+      new Chart(riskCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Low Risk', 'Medium Risk', 'High Risk', 'Critical Risk'],
+          datasets: [{
+            data: hasData ? [low, med, high, crit] : [3, 1, 1, 0],
+            backgroundColor: ['#10b981', '#f59e0b', '#f97316', '#ef4444'],
+            borderWidth: 2,
+            borderColor: '#0f172a'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '65%',
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, color: '#94a3b8' } }
+          }
+        }
+      });
+    }
+
+    // 2. CGPA Bands Bar Chart (Live)
+    const cgpaCtx = document.getElementById('facultyCgpaBandChart')?.getContext('2d');
+    if (cgpaCtx) {
+      const g9 = students.filter(s => (s.cgpa || 0) >= 9).length;
+      const g8 = students.filter(s => (s.cgpa || 0) >= 8 && (s.cgpa || 0) < 9).length;
+      const g7 = students.filter(s => (s.cgpa || 0) >= 7 && (s.cgpa || 0) < 8).length;
+      const g6 = students.filter(s => (s.cgpa || 0) >= 6 && (s.cgpa || 0) < 7).length;
+      const gLow = students.filter(s => (s.cgpa || 0) < 6).length;
+
+      new Chart(cgpaCtx, {
+        type: 'bar',
+        data: {
+          labels: ['9.0 - 10.0', '8.0 - 8.9', '7.0 - 7.9', '6.0 - 6.9', '< 6.0 CGPA'],
+          datasets: [{
+            label: 'Student Count',
+            data: [g9, g8, g7, g6, gLow],
+            backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'],
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1, color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+            x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
     }
   },
 

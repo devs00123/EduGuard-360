@@ -212,8 +212,23 @@ const API = {
     const q = new URLSearchParams(params).toString();
     return this.request(`/api/admin/users?${q}`);
   },
+  createAdminUser(data) {
+    return this.request('/api/admin/users', { method: 'POST', body: data });
+  },
+  resetAdminUserPassword(userId, newPassword = null) {
+    return this.request(`/api/admin/users/${userId}/reset-password`, { method: 'POST', body: { newPassword } });
+  },
+  toggleAdminUserStatus(userId) {
+    return this.request(`/api/admin/users/${userId}/toggle-status`, { method: 'PATCH' });
+  },
+  deleteAdminUser(userId) {
+    return this.request(`/api/admin/users/${userId}`, { method: 'DELETE' });
+  },
   getAdminDepartments() {
     return this.request('/api/admin/departments');
+  },
+  getAdminCourses() {
+    return this.request('/api/admin/courses');
   },
   getAdminCategories() {
     return this.request('/api/admin/categories');
