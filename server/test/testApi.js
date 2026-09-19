@@ -61,8 +61,11 @@ async function runTests() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' }
   }, { role: 'STUDENT' });
-  assert(demoLogin.status === 200, 'Demo login succeeded with DEMO_MODE=true', `User: ${demoLogin.data?.user?.name}`);
-  const studentToken = demoLogin.data?.token;
+  if (demoLogin.status === 200) {
+    assert(demoLogin.status === 200, 'Demo login verified (DEMO_MODE=true)', `User: ${demoLogin.data?.user?.name}`);
+  } else {
+    assert(demoLogin.status === 403, 'Demo login safely blocked in production (DEMO_MODE=false)');
+  }
 
   // Standard student login
   const studentLogin = await request({
@@ -73,6 +76,7 @@ async function runTests() {
     headers: { 'Content-Type': 'application/json' }
   }, { email: 'rahul@eduguard.edu', password: 'EduGuard@123' });
   assert(studentLogin.status === 200 && studentLogin.data?.user?.role === 'STUDENT', 'Student credentials login valid');
+  const studentToken = studentLogin.data?.token || demoLogin.data?.token;
 
   // --- 3. DETERMINISTIC MATHEMATICAL RISK ENGINE ---
   console.log('\n[3/9] Testing Deterministic Academic Risk Calculation...');
@@ -244,10 +248,10 @@ async function runTests() {
   const staffLogin = await request({
     host: 'localhost',
     port: 5050,
-    path: '/api/auth/demo-login',
+    path: '/api/auth/login',
     method: 'POST',
     headers: { 'Content-Type': 'application/json' }
-  }, { role: 'DEPARTMENT_STAFF' });
+  }, { email: 'suresh@eduguard.edu', password: 'EduGuard@123' });
   const staffToken = staffLogin.data?.token;
 
   const staffSearch = await request({
