@@ -270,79 +270,15 @@
           <p class="google-auth-subtitle">Select your institutional account for <span style="color: #93c5fd; font-weight: 700;">EduGuard 360</span></p>
         </div>
 
-        <!-- Account List -->
+        <!-- Institutional Workspace Input -->
         <div class="google-account-list">
-          <!-- Administrator Account -->
-          <button type="button" class="google-account-item" data-email="admin@eduguard.edu" data-name="Dr. Vikram Seth" data-role="ADMIN">
-            <div class="google-avatar-box" style="background: linear-gradient(135deg, #7c3aed, #6366f1);">
-              <span>V</span>
-            </div>
-            <div class="google-account-info">
-              <div class="google-account-name">Dr. Vikram Seth <span class="google-account-badge" style="background: rgba(168, 85, 247, 0.3);">Dean / Admin</span></div>
-              <div class="google-account-email">admin@eduguard.edu</div>
-              <div class="google-account-meta">Executive Command &amp; Institutional Dean</div>
-            </div>
-            <i class="fas fa-chevron-right google-account-arrow"></i>
-          </button>
-
-          <!-- Faculty Account -->
-          <button type="button" class="google-account-item" data-email="ramesh@eduguard.edu" data-name="Dr. Ramesh Kumar" data-role="FACULTY">
-            <div class="google-avatar-box" style="background: linear-gradient(135deg, #0284c7, #38bdf8);">
-              <span>R</span>
-            </div>
-            <div class="google-account-info">
-              <div class="google-account-name">Dr. Ramesh Kumar <span class="google-account-badge">Faculty</span></div>
-              <div class="google-account-email">ramesh@eduguard.edu</div>
-              <div class="google-account-meta">Associate Professor • CSE Dept Mentor</div>
-            </div>
-            <i class="fas fa-chevron-right google-account-arrow"></i>
-          </button>
-
-          <!-- Dept Head Account -->
-          <button type="button" class="google-account-item" data-email="priya@eduguard.edu" data-name="Priya Nair" data-role="DEPARTMENT_HEAD">
-            <div class="google-avatar-box" style="background: linear-gradient(135deg, #d97706, #f59e0b);">
-              <span>P</span>
-            </div>
-            <div class="google-account-info">
-              <div class="google-account-name">Priya Nair <span class="google-account-badge" style="background: rgba(245, 158, 11, 0.3);">Dept Head</span></div>
-              <div class="google-account-email">priya@eduguard.edu</div>
-              <div class="google-account-meta">IT Operations &amp; Campus Infrastructure Head</div>
-            </div>
-            <i class="fas fa-chevron-right google-account-arrow"></i>
-          </button>
-
-          <!-- Staff Account -->
-          <button type="button" class="google-account-item" data-email="suresh@eduguard.edu" data-name="Suresh Patel" data-role="DEPARTMENT_STAFF">
-            <div class="google-avatar-box" style="background: linear-gradient(135deg, #059669, #34d399);">
-              <span>S</span>
-            </div>
-            <div class="google-account-info">
-              <div class="google-account-name">Suresh Patel <span class="google-account-badge" style="background: rgba(52, 211, 153, 0.3);">Staff</span></div>
-              <div class="google-account-email">suresh@eduguard.edu</div>
-              <div class="google-account-meta">Senior Network &amp; Facilities Support Tech</div>
-            </div>
-            <i class="fas fa-chevron-right google-account-arrow"></i>
-          </button>
-
-          <!-- Custom Real Google Workspace Section -->
-          <button type="button" class="google-account-item google-custom-toggle" id="googleCustomToggle">
-            <div class="google-avatar-box" style="background: rgba(147, 197, 253, 0.14); border: 1px dashed rgba(147, 197, 253, 0.45);">
-              <i class="fas fa-building-user" style="font-size: 13px; color: #93c5fd;"></i>
-            </div>
-            <div class="google-account-info">
-              <div class="google-account-name">Sign in with your Real Workspace ID</div>
-              <div class="google-account-email">Use any official institutional Google account</div>
-            </div>
-          </button>
-
-          <!-- Custom Account Input Panel -->
-          <div id="googleCustomPanel" style="display: none; padding: 14px; background: rgba(3, 12, 22, 0.7); border-radius: 14px; margin-top: 4px; border: 1px solid rgba(147, 197, 253, 0.28);">
-            <div style="font-size: 11.5px; color: #93c5fd; margin-bottom: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Enter Your Google Workspace Details:</div>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-              <input type="text" id="googleCustomName" placeholder="Your Full Name (e.g. Dr. Vikram Seth)" style="width: 100%; height: 40px; border-radius: 8px; background: rgba(7, 17, 31, 0.9); border: 1px solid rgba(147, 197, 253, 0.3); color: #fff; padding: 0 12px; font-size: 12.5px; outline: none;" />
+          <div id="googleCustomPanel" style="display: block; padding: 16px; background: rgba(3, 12, 22, 0.7); border-radius: 14px; border: 1px solid rgba(147, 197, 253, 0.28);">
+            <div style="font-size: 12px; color: #93c5fd; margin-bottom: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Institutional Google Workspace Identity:</div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <input type="text" id="googleCustomName" placeholder="Full Name (e.g. Dr. Academic Officer)" style="width: 100%; height: 42px; border-radius: 8px; background: rgba(7, 17, 31, 0.9); border: 1px solid rgba(147, 197, 253, 0.3); color: #fff; padding: 0 12px; font-size: 13px; outline: none;" />
               <div style="display: flex; gap: 8px;">
-                <input type="email" id="googleCustomEmail" placeholder="officer@college.edu or @eduguard.edu" style="flex: 1; height: 40px; border-radius: 8px; background: rgba(7, 17, 31, 0.9); border: 1px solid rgba(147, 197, 253, 0.3); color: #fff; padding: 0 12px; font-size: 12.5px; outline: none;" />
-                <button type="button" id="googleCustomSubmit" style="height: 40px; padding: 0 16px; background: linear-gradient(110deg, #70c8ff, #8e8fff); border: none; border-radius: 8px; color: #07111f; font-weight: 800; font-size: 12.5px; cursor: pointer; white-space: nowrap;">Authorize</button>
+                <input type="email" id="googleCustomEmail" placeholder="officer@campus.edu or staff@institution.edu" style="flex: 1; height: 42px; border-radius: 8px; background: rgba(7, 17, 31, 0.9); border: 1px solid rgba(147, 197, 253, 0.3); color: #fff; padding: 0 12px; font-size: 13px; outline: none;" />
+                <button type="button" id="googleCustomSubmit" style="height: 42px; padding: 0 18px; background: linear-gradient(110deg, #70c8ff, #8e8fff); border: none; border-radius: 8px; color: #07111f; font-weight: 800; font-size: 13px; cursor: pointer; white-space: nowrap;">Authorize SSO</button>
               </div>
             </div>
           </div>
